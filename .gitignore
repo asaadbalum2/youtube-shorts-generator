@@ -1,21 +1,53 @@
+# Environment and secrets
 .env
 token.pickle
 client_secrets.json
+youtube_tokens.txt
+YOUR_KEYS.txt
+env_for_deployment.txt
+
+# Generated video/audio files
 *.mp4
 *.mp3
 temp/
 output/
+assets/
+
+# Python
 __pycache__/
 *.pyc
-*.db
-*.sqlite
-*.log
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
 .venv/
 venv/
 env/
-youtube_tokens.txt
-YOUR_KEYS.txt
-env_for_deployment.txt
+.pythonlibs/
+poetry.lock
+Pipfile.lock
+
+# Database
+*.db
+*.sqlite
+shorts_db.sqlite
+
+# Logs
+*.log
+shorts_generator.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Scripts (user-specific)
 get_fresh_token.py
 extract_token.py
 simple_token_getter.py

@@ -5,7 +5,7 @@ Optimized for maximum views potential
 import praw
 import requests
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 from groq import Groq
 import json
 from config import Config

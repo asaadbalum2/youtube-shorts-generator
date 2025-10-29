@@ -206,7 +206,7 @@ class YouTubeShortsGenerator:
                 self.scheduler.stop()
             report_scheduler.shutdown()
     
-    def generate_batch(self, count: int = None):
+    def generate_batch(self, count: Optional[int] = None):
         """Generate a batch of videos immediately"""
         if count is None:
             count = Config.VIDEOS_PER_DAY
