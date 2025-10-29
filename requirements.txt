@@ -32,11 +32,10 @@ pyyoutube==2.3.2  # YouTube Data API alternative
 pytrends==5.0.3  # Google Trends
 
 # Email & Reporting
-smtplib  # Built-in
-email  # Built-in
+# smtplib and email are built-in modules
 
 # Database (for tracking videos, stats)
-sqlite3  # Built-in
+# sqlite3 is a built-in module
 
 # Utilities
 python-dateutil==2.8.2
