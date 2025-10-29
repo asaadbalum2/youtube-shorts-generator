@@ -6,11 +6,11 @@ schedule==1.2.0
 APScheduler==3.10.4
 
 # AI & ML
-groq==0.3.1
+groq>=0.33.0
 requests==2.31.0
-openai==1.3.0  # For free alternative - we'll use Groq primarily
-huggingface-hub==0.19.4
-transformers==4.35.2
+openai>=1.3.0  # For free alternative - we'll use Groq primarily
+huggingface-hub>=0.19.4
+transformers>=4.35.2
 
 # Video Processing
 moviepy==1.0.3
@@ -28,8 +28,8 @@ google-auth-oauthlib==1.1.0
 
 # Data Sources
 praw==7.7.1  # Reddit API
-pyyoutube==2.3.2  # YouTube Data API alternative
-pytrends==5.0.3  # Google Trends
+# pyyoutube package is not available on PyPI - using google-api-python-client instead
+pytrends>=4.9.2  # Google Trends
 
 # Email & Reporting
 # smtplib and email are built-in modules
@@ -42,3 +42,7 @@ python-dateutil==2.8.2
 pytz==2023.3
 youtube-transcript-api==0.6.1
 
+google-auth
+gtts
+numpy
+praw
