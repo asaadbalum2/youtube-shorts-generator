@@ -1,0 +1,26 @@
+# Copy this to .env and fill in your values
+
+# YouTube API Credentials (Will be set up via OAuth)
+YOUTUBE_CLIENT_ID=your_client_id_here
+YOUTUBE_CLIENT_SECRET=your_client_secret_here
+YOUTUBE_REFRESH_TOKEN=your_refresh_token_here
+YOUTUBE_CHANNEL_ID=your_channel_id_here
+
+# AI Services
+GROQ_API_KEY=your_groq_api_key_here
+HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+
+# Reddit API (Free - create at https://www.reddit.com/prefs/apps)
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+REDDIT_USER_AGENT=YShortsGen/1.0
+
+# Email for Reports
+EMAIL_ADDRESS=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password_here
+REPORT_RECIPIENT=your_email@gmail.com
+
+# Video Generation Settings
+VIDEOS_PER_DAY=3
+LOG_LEVEL=INFO
+

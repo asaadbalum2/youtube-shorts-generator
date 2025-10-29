@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  shorts-generator:
+    build: .
+    container_name: youtube-shorts-generator
+    restart: unless-stopped
+    volumes:
+      - ./temp:/app/temp
+      - ./output:/app/output
+      - ./shorts_db.sqlite:/app/shorts_db.sqlite
+      - ./token.pickle:/app/token.pickle
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+
