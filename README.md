@@ -252,3 +252,4 @@ For issues or questions, check the logs in `shorts_generator.log`.
 
 ⚠️ **Content Quality**: While optimized for views, always monitor your channel and adjust topics/content as needed.
 
+# youtube-shorts-generator
