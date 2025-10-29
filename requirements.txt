@@ -46,3 +46,4 @@ google-auth
 gtts
 numpy
 praw
+numpy<2
