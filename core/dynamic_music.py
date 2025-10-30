@@ -47,15 +47,17 @@ class DynamicMusicSelector:
         
         print(f"🎵 Selecting music: {music_style} style, {mood} mood, {tempo} tempo")
         
-        # First, try to find local music file
+        # First, try Freesound API (if configured)
+        freesound = FreesoundMusicAPI()
+        if freesound.token:
+            api_music = freesound.search_music(music_style, mood, duration)
+            if api_music:
+                return api_music
+        
+        # Second, try local music files
         local_music = self._get_local_music(music_style, mood, tempo)
         if local_music:
             return local_music
-        
-        # If no local music, try to download from free sources
-        downloaded_music = self._download_free_music(music_style, mood, duration)
-        if downloaded_music:
-            return downloaded_music
         
         print("⚠️ No music available, video will have voiceover only")
         return None

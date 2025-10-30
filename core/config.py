@@ -38,6 +38,11 @@ class Config:
     PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
     PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
     
+    # Advanced APIs (Free tiers)
+    FREESOUND_API_KEY = os.getenv("FREESOUND_API_KEY", "")
+    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+    HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")
+    
     # Video Settings
     MAX_TOPICS_TO_ANALYZE = 20
     MIN_TREND_SCORE = 7.0  # Out of 10

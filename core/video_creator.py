@@ -127,10 +127,21 @@ class VideoCreator:
         return output_path
     
     def _generate_dynamic_audio(self, script: str, analysis: Dict) -> str:
-        """Generate TTS audio with dynamic voice selection based on content"""
+        """Generate TTS audio with dynamic voice selection南县 content"""
         print("🎤 Generating dynamic TTS audio...")
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
+        
+        # Try ElevenLabs first (better quality), fallback to gTTS
+        from core.elevenlabs_tts import ElevenLabsTTS
+        elevenlabs_tts = ElevenLabsTTS()
+        voice_style = analysis.get("voice_style", "casual")
+        
+        result = elevenlabs_tts.generate_speech(script, voice_style, audio_path)
+        if result:
+            return result
+        
+        # Fallback to gTTS
         return self.voice_selector.generate_speech(script, analysis, audio_path)
     
     def _fetch_broll_media(self, topic: str, duration: float, num_segments: int = 0) -> List[Dict]:
