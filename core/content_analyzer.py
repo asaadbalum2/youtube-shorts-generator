@@ -95,18 +95,32 @@ Return JSON format:
             except json.JSONDecodeError as json_error:
                 print(f"⚠️ JSON parse error: {json_error}")
                 # Try to extract JSON if wrapped in text
-                # Use balanced bracket matching to find the JSON object
-                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
-                if json_match:
-                    try:
-                        json_str = json_match.group(0)
-                        # Clean the extracted JSON
-                        json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
-                        analysis = json.loads(json_str)
-                        print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
-                        return analysis
-                    except Exception as extract_error:
-                        print(f"⚠️ Failed to parse extracted JSON: {extract_error}")
+                # Find the first { and matching closing }
+                start_idx = content.find('{')
+                if start_idx != -1:
+                    # Find the matching closing brace by counting brackets
+                    bracket_count = 0
+                    end_idx = start_idx
+                    for i in range(start_idx, len(content)):
+                        if content[i] == '{':
+                            bracket_count += 1
+                        elif content[i] == '}':
+                            bracket_count -= 1
+                            if bracket_count == 0:
+                                end_idx = i + 1
+                                break
+                    
+                    if end_idx > start_idx:
+                        json_str = content[start_idx:end_idx]
+                    if end_idx > start_idx:
+                        try:
+                            # Clean the extracted JSON
+                            json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
+                            analysis = json.loads(json_str)
+                            print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
+                            return analysis
+                        except Exception as extract_error:
+                            print(f"⚠️ Failed to parse extracted JSON: {extract_error}")
                 
                 # Log raw content for debugging (first 500 chars)
                 print(f"⚠️ Raw content (first 500 chars): {content[:500]}")
