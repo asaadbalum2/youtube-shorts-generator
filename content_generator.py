@@ -60,7 +60,7 @@ Format your response as JSON:
 
         try:
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",  # Updated: using current Groq model
                 messages=[
                     {"role": "system", "content": "You are a YouTube Shorts content expert specializing in viral videos."},
                     {"role": "user", "content": prompt}
@@ -137,7 +137,7 @@ Format your response as JSON:
             - Return as JSON array: ["#hashtag1", "#hashtag2", ...]"""
             
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",  # Updated: using current Groq model
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
