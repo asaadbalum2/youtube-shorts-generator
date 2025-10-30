@@ -48,20 +48,35 @@ class DynamicMusicSelector:
         
         print(f"🎵 Selecting music: {music_style} style, {mood} mood, {tempo} tempo")
         
-        # FIRST PRIORITY: YouTube Audio Library (100% free, copyright-safe, YouTube recognizes it)
-        # YouTube automatically shows song name when you select "Attribution" during upload
-        youtube_audio = YouTubeAudioLibrary()
-        yt_music = youtube_audio.get_music(mood, music_style, duration)
-        if yt_music:
-            print(f"✅ Using YouTube Audio Library music (copyright-safe, YouTube recognizes it)")
-            return yt_music
-        
-        # SECOND: Jamendo API (free, trending/popular tracks) - as backup
+        # FIRST PRIORITY: Jamendo API - AUTOMATIC trending/viral tracks (no downloads needed!)
+        # Jamendo's 'popularity_week' order gets tracks trending THIS WEEK automatically
+        # This is updated weekly by Jamendo - you get fresh trending music without manual downloads
         jamendo = JamendoMusicAPI()
         jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=[music_style, mood])
         if jamendo_music:
-            print(f"✅ Using Jamendo music (free tier, trending tracks)")
+            print(f"✅ Using Jamendo trending music (automatically updated weekly, copyright-safe)")
             return jamendo_music
+        
+        # SECOND: Free Music Archive (FMA) - also trending, no API key needed
+        try:
+            from core.fma_music import FreeMusicArchiveAPI
+            fma = FreeMusicArchiveAPI()
+            fma_music = fma.search_trending_music(genre=music_style, mood=mood)
+            if fma_music:
+                print(f"✅ Using FMA trending music (free, no API key needed)")
+                return fma_music
+        except ImportError:
+            pass  # FMA optional
+        except Exception as e:
+            print(f"ℹ️ FMA not available: {e}")
+        
+        # THIRD: YouTube Audio Library (static files - only if trending APIs fail)
+        # Note: This requires manual downloads, but it's copyright-safe backup
+        youtube_audio = YouTubeAudioLibrary()
+        yt_music = youtube_audio.get_music(mood, music_style, duration)
+        if yt_music:
+            print(f"✅ Using YouTube Audio Library music (copyright-safe backup)")
+            return yt_music
         
         # THIRD: Local music files
         local_music = self._get_local_music(music_style, mood, tempo)
