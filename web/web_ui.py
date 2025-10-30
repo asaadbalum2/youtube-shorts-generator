@@ -97,6 +97,10 @@ async def dashboard(request: Request):
         print(f"DEBUG: Rendering dashboard with {len(recent_videos)} videos")
         print(f"DEBUG: Template exists: {os.path.exists('web/templates/dashboard.html')}")
         
+        # Debug video data
+        for i, video in enumerate(recent_videos):
+            print(f"DEBUG: Video {i+1}: ID={video.get('video_id')}, Title={video.get('title')[:30]}..., FilePath={video.get('video_file_path')}, Status={video.get('status')}")
+        
         response = templates.TemplateResponse("dashboard.html", {
             "request": request,
             "today_created": today_videos_created,
@@ -160,31 +164,43 @@ async def get_stats():
 async def refresh_token():
     """Manually refresh YouTube token"""
     try:
-        from core.token_auto_recovery import regenerate_token_auto, update_config_token
-        
         print("🔄 Manual token refresh requested via dashboard...")
+        print("🔄 Importing token_auto_recovery module...")
+        
+        from core.token_auto_recovery import regenerate_token_auto, update_config_token
+        print("✅ Token auto recovery module imported successfully")
+        
+        print("🔄 Calling regenerate_token_auto()...")
         new_token = regenerate_token_auto()
+        print(f"🔄 regenerate_token_auto() returned: {new_token[:20] if new_token else 'None'}...")
         
         if new_token:
+            print("✅ New token generated, attempting to update in memory...")
             # Update token in memory
             if update_config_token(new_token):
+                print("✅ Token updated in memory successfully")
                 return {
                     "status": "success",
                     "message": "Token refreshed successfully! Updated in memory.",
                     "token_preview": f"{new_token[:20]}...{new_token[-10:]}"
                 }
             else:
+                print("⚠️ Token generated but couldn't update in memory")
                 return {
                     "status": "partial_success",
                     "message": "Token generated but couldn't update in memory. Please restart app.",
                     "token_preview": f"{new_token[:20]}...{new_token[-10:]}"
                 }
         else:
+            print("❌ No token generated")
             return {
                 "status": "error",
                 "message": "Failed to generate new token. Check logs for details."
             }
     except Exception as e:
+        print(f"❌ Error in refresh_token: {str(e)}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
         return {
             "status": "error",
             "message": f"Error refreshing token: {str(e)}"
@@ -194,19 +210,35 @@ async def refresh_token():
 async def test_token():
     """Test YouTube token connection with minimal quota usage"""
     try:
-        from core.youtube_uploader import YouTubeUploader
-        
         print("🧪 Testing YouTube token connection...")
+        print("🧪 Importing YouTubeUploader...")
+        
+        from core.youtube_uploader import YouTubeUploader
+        print("✅ YouTubeUploader imported successfully")
+        
+        print("🧪 Creating YouTubeUploader instance...")
         uploader = YouTubeUploader()
+        print("✅ YouTubeUploader instance created")
+        
+        print("🧪 Calling test_token_connection()...")
         result = uploader.test_token_connection()
+        print(f"🧪 test_token_connection() returned: {result}")
         
         # Log the test (1 unit cost)
         if uploader.quota_manager:
+            print("🧪 Logging quota usage...")
             uploader.quota_manager.log_quota_usage("token_test", 1)
+            print("✅ Quota usage logged")
+        else:
+            print("⚠️ No quota manager available")
         
+        print(f"🧪 Returning result: {result}")
         return result
         
     except Exception as e:
+        print(f"❌ Error in test_token: {str(e)}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
         return {
             "valid": False,
             "error": f"Error testing token: {str(e)}"
@@ -217,25 +249,32 @@ async def test_groq():
     """Test Groq API connection"""
     try:
         print("🤖 Testing Groq API connection...")
-        from core.content_generator import ContentGenerator
+        print("🤖 Importing ContentGenerator...")
         
+        from core.content_generator import ContentGenerator
         print("✅ ContentGenerator imported successfully")
+        
+        print("🤖 Creating ContentGenerator instance...")
         generator = ContentGenerator()
         print("✅ ContentGenerator initialized")
         
         # Test with a simple prompt
         test_prompt = "Write a short sentence about cats."
         print(f"📝 Testing with prompt: {test_prompt}")
+        print("📝 Calling generate_content()...")
+        
         response = generator.generate_content(test_prompt, max_tokens=50)
         print(f"📝 Response received: {response[:50] if response else 'None'}...")
         
         if response and len(response.strip()) > 0:
+            print("✅ Groq test successful")
             return {
                 "success": True,
                 "response": response.strip()[:100] + "..." if len(response) > 100 else response.strip(),
                 "message": "Groq API is working correctly"
             }
         else:
+            print("❌ Empty response from Groq API")
             return {
                 "success": False,
                 "error": "Empty response from Groq API"
@@ -255,19 +294,25 @@ async def test_reddit():
     """Test Reddit API connection"""
     try:
         print("🔴 Testing Reddit API connection...")
-        from core.topic_discovery import TopicDiscoveryAgent
+        print("🔴 Importing TopicDiscoveryAgent...")
         
+        from core.topic_discovery import TopicDiscoveryAgent
         print("✅ TopicDiscoveryAgent imported successfully")
+        
+        print("🔴 Creating TopicDiscoveryAgent instance...")
         discoverer = TopicDiscoveryAgent()
         print("✅ TopicDiscoveryAgent initialized")
         
         # Test with a simple subreddit search
         test_subreddit = "AskReddit"
         print(f"📝 Testing with subreddit: {test_subreddit}")
+        print("📝 Calling get_trending_posts()...")
+        
         posts = discoverer.get_trending_posts(test_subreddit, limit=3)
         print(f"📝 Posts found: {len(posts) if posts else 0}")
         
         if posts and len(posts) > 0:
+            print("✅ Reddit test successful")
             return {
                 "success": True,
                 "posts_found": len(posts),
@@ -276,6 +321,7 @@ async def test_reddit():
                 "message": "Reddit API is working correctly"
             }
         else:
+            print("❌ No posts found or API connection failed")
             return {
                 "success": False,
                 "error": "No posts found or API connection failed"
