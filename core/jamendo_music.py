@@ -12,9 +12,11 @@ class JamendoMusicAPI:
     """Jamendo API for free royalty-free music"""
     
     def __init__(self):
-        # Jamendo API is free, no key needed for basic usage
-        # But for commercial use, you may need to register
-        self.api_key = os.getenv('JAMENDO_API_KEY', '')
+        # Jamendo uses CLIENT_ID and CLIENT_SECRET (free tier - no credit card)
+        self.client_id = os.getenv('JAMENDO_CLIENT_ID', '')
+        self.client_secret = os.getenv('JAMENDO_CLIENT_SECRET', '')
+        # Fallback to old API_KEY if provided
+        self.api_key = self.client_id or os.getenv('JAMENDO_API_KEY', '')
         self.base_url = "https://api.jamendo.com/v3.0"
     
     def search_music(self, genre: str = None, mood: str = None, tags: List[str] = None) -> Optional[str]:
@@ -41,9 +43,10 @@ class JamendoMusicAPI:
                 search_tags.extend(tags)
             
             # Jamendo API search - use client_id parameter (required)
-            # Register at https://developer.jamendo.com/ to get free API key
+            # Free tier: https://developer.jamendo.com/ - no credit card, truly free
+            client_id_to_use = self.client_id or self.api_key or '58c7c0f1'  # Use CLIENT_ID if set
             params = {
-                'client_id': self.api_key if self.api_key else '58c7c0f1',  # Default public key, but better to register
+                'client_id': client_id_to_use,
                 'format': 'json',
                 'limit': 20,  # Get more results
                 'tags': '+'.join(search_tags[:3]) if search_tags else 'instrumental',
@@ -75,7 +78,7 @@ class JamendoMusicAPI:
             # If no results, try a simpler search without specific mood tags
             if not tracks or response.status_code != 200 or len(tracks) == 0:
                 simple_params = {
-                    'client_id': self.api_key or 'test',
+                    'client_id': self.client_id or self.api_key or '58c7c0f1', 
                     'format': 'json',
                     'limit': 10,
                     'tags': 'instrumental',

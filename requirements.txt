@@ -19,6 +19,7 @@ opencv-python==4.8.1.78
 
 # Audio Processing
 gtts==2.4.0  # Google Text-to-Speech (free)
+edge-tts>=7.2.0  # Microsoft Edge TTS (100% free, unlimited, no API key)
 pydub==0.25.1
 
 # YouTube API

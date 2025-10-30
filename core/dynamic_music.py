@@ -48,13 +48,8 @@ class DynamicMusicSelector:
         
         print(f"🎵 Selecting music: {music_style} style, {mood} mood, {tempo} tempo")
         
-        # First, try Jamendo API (free, trending/popular tracks)
-        jamendo = JamendoMusicAPI()
-        jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=[music_style, mood])
-        if jamendo_music:
-            return jamendo_music
-        
-        # Second, try YouTube Audio Library (pre-downloaded, 100% free)
+        # FIRST PRIORITY: YouTube Audio Library (100% free, copyright-safe, YouTube recognizes it)
+        # YouTube automatically shows song name when you select "Attribution" during upload
         youtube_audio = YouTubeAudioLibrary()
         yt_music = youtube_audio.get_music(mood, music_style, duration)
         if yt_music:

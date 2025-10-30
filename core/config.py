@@ -38,9 +38,14 @@ class Config:
     PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
     PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
     
-    # Advanced APIs (Free tiers)
-    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")  # 10K chars/month free
+    # Music APIs (All Free, no credit card)
+    JAMENDO_CLIENT_ID = os.getenv("JAMENDO_CLIENT_ID", "")  # Free tier - no credit card
+    JAMENDO_CLIENT_SECRET = os.getenv("JAMENDO_CLIENT_SECRET", "")  # Free tier - no credit card
+    JAMENDO_API_KEY = os.getenv("JAMENDO_API_KEY", "")  # Legacy support
+    
+    # Advanced APIs (Optional)
     HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")  # Free tier
+    # Note: TTS uses Edge TTS (100% free, unlimited) - see core/edge_tts.py
     # Note: Music uses YouTube Audio Library (100% free, no API needed - see docs/FREE_MUSIC_SETUP.md)
     
     # Video Settings

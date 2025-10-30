@@ -211,17 +211,26 @@ class MediaFetcher:
         self.providers = []
         
         # Try Pexels first (better video quality)
-        if os.getenv('PEXELS_API_KEY'):
+        pexels_key = os.getenv('PEXELS_API_KEY') or Config.PEXELS_API_KEY
+        if pexels_key and pexels_key.strip():
             self.providers.append(PexelsProvider())
             print("✅ Pexels provider initialized")
+        else:
+            print("ℹ️ PEXELS_API_KEY not found in environment")
         
         # Then Pixabay
-        if os.getenv('PIXABAY_API_KEY'):
+        pixabay_key = os.getenv('PIXABAY_API_KEY') or Config.PIXABAY_API_KEY
+        if pixabay_key and pixabay_key.strip():
             self.providers.append(PixabayProvider())
             print("✅ Pixabay provider initialized")
+        else:
+            print("ℹ️ PIXABAY_API_KEY not found in environment")
         
         if not self.providers:
-            print("⚠️ No media providers configured! Add PEXELS_API_KEY or PIXABAY_API_KEY")
+            print("⚠️ CRITICAL: No media providers configured! You'll get (~) color backgrounds only.")
+            print("   → Add PEXELS_API_KEY or PIXABAY_API_KEY to Replit Secrets")
+        else:
+            print(f"✅ {len(self.providers)} media provider(s) ready")
     
     def get_image(self, query: str, prefer_video: bool = False) -> Optional[Dict]:
         """Get a single image/video for a query"""

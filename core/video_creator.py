@@ -131,17 +131,22 @@ class VideoCreator:
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
         
-        # Try ElevenLabs first (better quality), fallback to gTTS
-        from core.elevenlabs_tts import ElevenLabsTTS
-        elevenlabs_tts = ElevenLabsTTS()
-        voice_style = analysis.get("voice_style", "casual")
-        
-        result = elevenlabs_tts.generate_speech(script, voice_style, audio_path)
-        if result:
-            return result
+        # Try Edge TTS first (100% free, unlimited, high quality - Microsoft Edge TTS)
+        try:
+            from core.edge_tts import EdgeTTS
+            edge_tts = EdgeTTS()
+            voice_style = analysis.get("voice_style", "casual")
+            
+            result = edge_tts.generate_speech(script, audio_path, voice_style)
+            if result:
+                return result
+        except ImportError:
+            print("⚠️ edge-tts not installed - install with: pip install edge-tts")
+        except Exception as e:
+            print(f"⚠️ Edge TTS error: {e}")
         
         # Fallback to gTTS (forced American accent in dynamic_voice.py)
-        print("⚠️ Using gTTS fallback - for better quality add ELEVENLABS_API_KEY")
+        print("ℹ️ Using gTTS fallback - Edge TTS recommended for better quality")
         return self.voice_selector.generate_speech(script, analysis, audio_path)
     
     def _fetch_broll_media(self, topic: str, duration: float, num_segments: int = 0) -> List[Dict]:
