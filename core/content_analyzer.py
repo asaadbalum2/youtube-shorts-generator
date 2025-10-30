@@ -112,7 +112,6 @@ Return JSON format:
                     
                     if end_idx > start_idx:
                         json_str = content[start_idx:end_idx]
-                    if end_idx > start_idx:
                         try:
                             # Clean the extracted JSON
                             json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
