@@ -141,8 +141,12 @@ class VideoCreator:
             edge_tts = EdgeTTS()
             voice_style = analysis.get("voice_style", "casual")
             
+            # Improve script rhythm by adding strategic pauses for better pacing
+            # This makes narration more engaging and dynamic (without needing SSML)
+            script_with_pauses = self._add_rhythm_pauses(script, voice_style)
+            
             print(f"🎤 Generating audio with Edge TTS (voice style: {voice_style})")
-            result = edge_tts.generate_speech(script, audio_path, voice_style)
+            result = edge_tts.generate_speech(script_with_pauses, audio_path, voice_style)
             
             if result and os.path.exists(result):
                 print(f"✅ Edge TTS SUCCESS - American accent with dynamic rhythm")
@@ -156,6 +160,26 @@ class VideoCreator:
             import traceback
             traceback.print_exc()
             raise Exception(f"Edge TTS is required for proper accent. Error: {e}")
+    
+    def _add_rhythm_pauses(self, script: str, voice_style: str) -> str:
+        """Add strategic pauses to script for better rhythm and pacing"""
+        # Add pauses after commas, periods, and key phrases for better flow
+        # This makes narration more engaging without needing SSML
+        
+        # For energetic/dramatic styles: add shorter pauses (faster pace)
+        if voice_style in ['energetic', 'dramatic']:
+            # Replace periods with periods + slight pause
+            script = script.replace('. ', '. ... ')
+            # Replace commas with commas + micro pause
+            script = script.replace(', ', ', .. ')
+        elif voice_style in ['calm', 'professional']:
+            # For calm styles: natural pauses (keep as is)
+            pass
+        else:
+            # For casual/friendly: subtle pauses for engagement
+            script = script.replace('. ', '. ... ')
+        
+        return script
     
     def _fetch_broll_media(self, topic: str, duration: float, num_segments: int = 0) -> List[Dict]:
         """Fetch real b-roll images and videos from Pexels/Pixabay"""
