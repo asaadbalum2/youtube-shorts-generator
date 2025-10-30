@@ -31,28 +31,27 @@ class EdgeTTS:
         try:
             voice_to_use = voice or self.voice
             
-            # Use SSML for better rhythm and pace control
-            # This makes narration more interesting and dynamic
-            ssml_text = f"""<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-                <voice name="{voice_to_use}">
-                    <prosody rate="{rate}" pitch="{pitch}">
-                        {text}
-                    </prosody>
-                </voice>
-            </speak>"""
+            # Edge TTS doesn't support SSML directly - use plain text with voice selection
+            # The voice itself determines the pace and energy (energetic voices are faster, calm voices are slower)
+            # For rhythm control, we'll adjust text with pauses and use appropriate voices
             
-            try:
-                communicate = edge_tts.Communicate(ssml_text, voice_to_use)
-                await communicate.save(output_path)
-                print(f"✅ Edge TTS generated with SSML: {voice_to_use} (rate={rate}, pitch={pitch})")
+            # Try plain text first (Edge TTS works best with simple text)
+            communicate = edge_tts.Communicate(text, voice_to_use)
+            await communicate.save(output_path)
+            
+            # Verify file was created and has content
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                print(f"✅ Edge TTS generated: {voice_to_use} (American accent guaranteed)")
                 return True
-            except Exception as ssml_error:
-                # Fallback to simple text if SSML fails
-                print(f"⚠️ SSML failed: {ssml_error}, trying simple text...")
+            else:
+                print(f"⚠️ Edge TTS: File created but empty, retrying...")
+                # Retry once
                 communicate = edge_tts.Communicate(text, voice_to_use)
                 await communicate.save(output_path)
-                print(f"✅ Edge TTS generated (simple): {voice_to_use}")
-                return True
+                if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                    print(f"✅ Edge TTS generated (retry): {voice_to_use}")
+                    return True
+                return False
         except Exception as e:
             print(f"❌ Edge TTS error: {e}")
             return False

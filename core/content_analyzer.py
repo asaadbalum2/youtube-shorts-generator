@@ -77,6 +77,11 @@ Return JSON format:
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
+            # Check if content is empty BEFORE cleaning
+            if not content or not content.strip():
+                print("⚠️ Content analysis: Empty response from AI, using fallback")
+                return self._fallback_analysis(topic, script)
+            
             # Clean invalid control characters MORE AGGRESSIVELY
             content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
             # Also remove any remaining control chars
@@ -85,6 +90,7 @@ Return JSON format:
             # Check again after cleaning
             if not content or not content.strip():
                 print("⚠️ Content analysis: Content empty after cleaning, using fallback")
+                print(f"⚠️ Debug: Content length before cleaning: {len(response.choices[0].message.content)}")
                 return self._fallback_analysis(topic, script)
             
             # Try to parse JSON, with better error handling
@@ -94,6 +100,7 @@ Return JSON format:
                 return analysis
             except json.JSONDecodeError as json_error:
                 print(f"⚠️ JSON parse error: {json_error}")
+                print(f"⚠️ Raw content (first 500 chars): {content[:500] if len(content) > 0 else 'EMPTY'}")
                 # Try to extract JSON if wrapped in text
                 # Find the first { and matching closing }
                 start_idx = content.find('{')
