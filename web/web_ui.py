@@ -396,6 +396,11 @@ async def download_video(video_id: str):
         print(f"❌ Full traceback: {traceback.format_exc()}")
         return {"error": f"Download failed: {str(e)}"}, 500
 
+@app.get("/test")
+async def test_page(request: Request):
+    """Test page for JavaScript debugging"""
+    return templates.TemplateResponse("test.html", {"request": request})
+
 @app.get("/api/health")
 async def health():
     """Health check endpoint"""

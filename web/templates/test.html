@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript Test</title>
+</head>
+<body>
+    <h1>JavaScript Test Page</h1>
+    <button onclick="testFunction()">Test Button</button>
+    <div id="output"></div>
+    
+    <script>
+        console.log('🔧 Test page JavaScript loaded');
+        
+        function testFunction() {
+            console.log('🔧 Button clicked!');
+            document.getElementById('output').innerHTML = 'Button works!';
+            alert('JavaScript is working!');
+        }
+        
+        // Test fetch
+        fetch('/api/health')
+            .then(response => response.json())
+            .then(data => {
+                console.log('🔧 API test successful:', data);
+                document.getElementById('output').innerHTML += '<br>API test: ' + JSON.stringify(data);
+            })
+            .catch(error => {
+                console.error('🔧 API test failed:', error);
+                document.getElementById('output').innerHTML += '<br>API test failed: ' + error;
+            });
+    </script>
+</body>
+</html>
