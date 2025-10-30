@@ -139,7 +139,7 @@ class VideoCreator:
         try:
             from core.edge_tts import EdgeTTS
             edge_tts = EdgeTTS()
-            voice_styleเกี่ยว = analysis.get("voice_style", "casual")
+            voice_style = analysis.get("voice_style", "casual")
             
             print(f"🎤 Generating audio with Edge TTS (voice style: {voice_style})")
             result = edge_tts.generate_speech(script, audio_path, voice_style)
