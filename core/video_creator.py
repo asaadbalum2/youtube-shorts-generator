@@ -55,7 +55,9 @@ class VideoCreator:
         
         # 0. Analyze content to determine mood, style, music, voice
         content_analysis = self.content_analyzer.analyze_content(topic, script)
-        print(f"📊 Content analysis: {content_analysis.get('mood')} mood, {content_analysis.get('music_style')} music, {content_analysis.get('voice_style')} voice")
+        # Store mood for font styling
+        self.current_content_mood = content_analysis.get('mood', 'informative')
+        print(f"📊 Content analysis: {self.current_content_mood} mood, {content_analysis.get('music_style')} music, {content_analysis.get('voice_style')} voice")
         
         # 1. Generate high-quality audio (TTS) with dynamic voice
         audio_path = self._generate_dynamic_audio(script, content_analysis)
@@ -455,24 +457,17 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
         
         return bg_clip
     
-    def _create_kinetic_text(self, text: str, index: int) -> TextClip:
-        """Create modern YouTube Shorts style subtitles"""
-        # Modern fonts - YouTube Shorts style (clean, bold, modern)
-        # Modern fonts for YouTube Shorts - prioritize bold fonts for visibility
-        font_paths = [
-            "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold - clean and modern
-            "C:/Windows/Fonts/segoeuib.ttf",  # Segoe UI Bold - Windows modern
-            "C:/Windows/Fonts/calibrib.ttf",  # Calibri Bold
-            "C:/Windows/Fonts/impact.ttf",  # Impact - bold and eye-catching
-            "C:/Windows/Fonts/arial.ttf",  # Fallback to regular Arial
-        ]
-        
+    def _create_kinetic_text(self, text: str, index: int, content_mood: str = "informative") -> TextClip:
+        """Create modern YouTube Shorts style subtitles with dynamic colors and design"""
         # PRIORITIZE Google Fonts - modern YouTube Shorts style
         font_families = ["Bebas Neue", "Montserrat", "Poppins", "Roboto", "Inter"]
         font_name = font_families[index % len(font_families)]  # Rotate fonts
         
-        # Get font from Google Fonts (downloads if needed)
-        font_path = self.font_manager.get_font_path(font_name, weight="700")
+        # Get font from Google Fonts (downloads if needed) - ALWAYS use bold (900 weight for extra bold)
+        font_path = self.font_manager.get_font_path(font_name, weight="900")  # Ultra bold for impact
+        if not os.path.exists(font_path) or font_path == "Arial-Bold":
+            # Fallback to 700 weight if 900 not available
+            font_path = self.font_manager.get_font_path(font_name, weight="700")
         
         # Verify font exists, try alternatives if not
         if not os.path.exists(font_path) or not font_path or font_path == "Arial-Bold":
@@ -485,32 +480,99 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
                         font_name = alt_font
                         break
         
-        print(f"📝 Using font: {font_name} at {font_path}")
+        print(f"📝 Using font: {font_name} (ultra-bold) at {font_path}")
         
-        font_size = 95  # Larger for YouTube Shorts (increased from 80)
-        max_width = self.video_size[0] - 80  # Less margin for larger text
+        # Dynamic font size based on text length (better readability)
+        font_size = 100 if len(text) < 50 else (90 if len(text) < 100 else 85)
+        max_width = self.video_size[0] - 100  # Better margins
         
-        # Create text clip with modern YouTube Shorts styling
+        # DYNAMIC COLORS based on content mood - YouTube Shorts style
+        color_schemes = {
+            'dramatic': {
+                'text_color': '#FFD700',  # Gold/yellow - eye-catching
+                'stroke_color': '#000000',  # Black outline
+                'shadow_color': '#FF0000'  # Red shadow for drama
+            },
+            'energetic': {
+                'text_color': '#FF6B35',  # Vibrant orange
+                'stroke_color': '#FFFFFF',  # White outline
+                'shadow_color': '#FFD700'  # Gold shadow
+            },
+            'mysterious': {
+                'text_color': '#9D4EDD',  # Purple
+                'stroke_color': '#000000',
+                'shadow_color': '#7209B7'  # Dark purple shadow
+            },
+            'serious': {
+                'text_color': '#FFFFFF',  # White
+                'stroke_color': '#000000',  # Black outline
+                'shadow_color': '#1A1A1A'  # Dark shadow
+            },
+            'upbeat': {
+                'text_color': '#00FF88',  # Bright green/cyan
+                'stroke_color': '#000000',
+                'shadow_color': '#00CCFF'  # Cyan shadow
+            },
+            'calm': {
+               entence_color': '#E0E7FF',  # Soft blue
+                'stroke_color': '#1E293B',  # Dark blue-gray
+                'shadow_color': '#3B82F6'  # Blue shadow
+            }
+        }
+        
+        # Select color scheme based on mood
+        mood_lower = content_mood.lower() if content_mood else 'informative'
+        if 'dramatic' in mood_lower or 'dark' in mood_lower:
+            colors =宝贝 color_schemes['dramatic']
+        elif 'energetic' in mood_lower or 'amazing' in mood_lower:
+            colors = color_schemes['energetic']
+        elif 'mysterious' in mood_lower or 'secret' in mood_lower:
+            colors = color_schemes['mysterious']
+        elif 'serious' in mood_lower or 'medical' in mood_lower:
+            colors = color_schemes['serious']
+        elif 'upbeat' in mood_lower or 'happy' in mood_lower:
+            colors = color_schemes['upbeat']
+        elif 'calm' in mood_lower or 'peaceful' in mood_lower:
+            colors = color_schemes['calm']
+        else:
+            colors = color_schemes['serious']  # Default: clean white on black
+        
+        # Create text clip with MODERN YouTube Shorts styling
         try:
+            # Primary text with bold stroke
             text_clip = TextClip(
                 text,
                 fontsize=font_size,
-                color='white',
-                font=font_path if font_path else 'Arial-Bold',  # Bold font for visibility
-                stroke_color='black',
-                stroke_width=7,  # Thicker outline (YouTube Shorts standard)
+                color=colors['text_color'],
+                font=font_path if font_path and font_path != "Arial-Bold" else 'Arial-Bold',
+                stroke_color=colors['stroke_color'],
+                stroke_width=8,  # Thick outline for visibility (YouTube Shorts standard)
                 method='caption',
                 size=(max_width, None),
                 align='center',
                 bg_color='transparent'
-            ).set_position(('center', self.video_size[1] * 0.82))  # Slightly higher for better visibility
+            ).set_position(('center', self.video_size[1] * 0.78))  # Bottom area for YouTube Shorts
             
-            # Ensure duration is set to avoid errors
+            # Ensure duration is set
             if not hasattr(text_clip, 'duration') or text_clip.duration is None:
                 text_clip = text_clip.set_duration(5.0)
             
-            # Smooth entrance animation
-            text_clip = text_clip.set_start(0.1).fadein(0.4).fadeout(0.3)
+            # KINETIC ANIMATIONS - YouTube Shorts style
+            # Smooth fade in with slight scale animation
+            text_clip = (text_clip
+                        .fadein(0.3)  # Fast fade in
+                        .fadeout(0.3)  # Fast fade out
+                        .set_start(0.1))
+            
+            # Add subtle position animation (kinetic effect)
+            # Slight upward movement for dynamic feel
+            def make_frame(t):
+                # Slight bounce effect
+                if t < 0.3:
+                    y_offset = int(10 * (1 - t/0.3))  # Start 10px lower, move up
+                else:
+                    y_offset = 0
+                return text_clip.set_position(('center', self.video_size[1] * 0.78 - y_offset))
         except Exception as e:
             print(f"⚠️ Font error, using default: {e}")
             # Fallback - simple, clean styling with explicit duration
