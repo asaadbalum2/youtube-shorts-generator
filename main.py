@@ -246,7 +246,7 @@ class YouTubeShortsGenerator:
                 # Mount web UI dashboard
                 try:
                     from web_ui import app as dashboard_app
-                    from fastapi.mount import Mount
+                    # app.mount() is built-in to FastAPI, no import needed
                     app.mount("/dashboard", dashboard_app)
                     logger.info("Web UI dashboard mounted at /dashboard")
                 except Exception as ui_error:
