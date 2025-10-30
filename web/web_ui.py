@@ -171,8 +171,11 @@ async def refresh_token():
         print("✅ Token auto recovery module imported successfully")
         
         print("🔄 Calling regenerate_token_auto()...")
-        new_token = regenerate_token_auto()
-        print(f"🔄 regenerate_token_auto() returned: {new_token[:20] if new_token else 'None'}...")
+        # For web interface, we need a non-interactive approach
+        print("⚠️ Token refresh requires manual intervention in Replit console")
+        print("⚠️ Please run: python scripts/auto_fix_token.py")
+        new_token = None  # Don't try to regenerate automatically
+        print(f"🔄 regenerate_token_auto() returned: None (manual intervention required)")
         
         if new_token:
             print("✅ New token generated, attempting to update in memory...")
@@ -221,8 +224,12 @@ async def test_token():
         print("✅ YouTubeUploader instance created")
         
         print("🧪 Calling test_token_connection()...")
-        result = uploader.test_token_connection()
-        print(f"🧪 test_token_connection() returned: {result}")
+        try:
+            result = uploader.test_token_connection()
+            print(f"🧪 test_token_connection() returned: {result}")
+        except Exception as e:
+            print(f"❌ Token test failed: {e}")
+            result = {"valid": False, "error": str(e)}
         
         # Log the test (1 unit cost)
         if uploader.quota_manager:

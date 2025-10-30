@@ -635,7 +635,7 @@
         
         // Test if we can make a simple fetch request
         console.log('🔧 Testing basic fetch...');
-        fetch('/dashboard/api/health')
+        fetch('/dashboard/api/health?v=' + Date.now())
             .then(response => response.json())
             .then(data => console.log('🔧 Health check response:', data))
             .catch(error => console.error('🔧 Health check error:', error));
