@@ -17,7 +17,7 @@
 ### 1. **Resilience System**
 - Videos are **saved to disk** even if upload fails
 - Failed uploads are **track needs in database**
-- System **continues running** - doesn't crash momentarily failure
+- System **continues running** - doesn't crash on upload failure
 - Videos are **queued for retry** once token is fixed
 
 ### 2. **Auto-Retry Queue**
@@ -80,5 +80,5 @@
 - ✅ **Resilient** - Continues creating videos even when upload fails
 - ✅ **Alert System** - You'll be notified when action is needed
 
-**This is sensitive for any OAuth-based system - Google requires user consent for security.**
+**This is normal for any OAuth-based system - Google requires user consent for security.**
 

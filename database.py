@@ -77,7 +77,7 @@ class Database:
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO videos (video_id, title, description, topic, trend_score, status, video_file_path disorder
+            INSERT INTO videos (video_id, title, description, topic, trend_score, status, video_file_path)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             video_data.get('video_id'),
