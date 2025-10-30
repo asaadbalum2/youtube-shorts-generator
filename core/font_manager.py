@@ -139,6 +139,25 @@ class FontManager:
                 except:
                     continue
             
+            # Method 4: Try jsDelivr CDN for Google Fonts (backup)
+            # jsDelivr mirrors Google Fonts
+            font_id = font_name.lower().replace(" ", "-")
+            jsdelivr_urls = [
+                f"https://cdn.jsdelivr.net/npm/@fontsource/{font_id}/{weight}.ttf",
+                f"https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/{font_id}/{font_id.capitalize()}-{weight}.ttf",
+            ]
+            
+            for url in jsdelivr_urls:
+                try:
+                    headers = {'User-Agent': 'Mozilla/5.0'}
+                    response = requests.get(url, timeout=15, headers=headers)
+                    if response.status_code == 200 and len(response.content) > 1000:
+                        output_path.write_bytes(response.content)
+                        print(f"✅ Downloaded font: {font_name} (jsDelivr CDN)")
+                        return True
+                except:
+                    continue
+            
             print(f"⚠️ Could not download {font_name} as TTF - all methods failed")
             return False
                 
