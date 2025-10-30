@@ -147,7 +147,7 @@ Format your response as JSON:
     def _generate_fallback_content(self, topic: str) -> Dict:
         """Fallback if AI generation fails"""
         return {
-            "script": f"Today we're talking about {topic}. This is something you probably didn't know. Let me break it down for you. First point, second point, third point. That's why this is so important. What do you think? Comment below!",
+            "script": f"Today we're talking about {topic}. This is something you probably didn't know. First, let me explain the key details about this topic and why it matters to you. Second, there are important implications that affect your daily life in ways you might not realize. Third, understanding this can change how you see the world around you. That's why this topic is so important and worth learning about. What do you think? Comment below!",
             "title": f"The Truth About {topic[:30]}",
             "description": f"Discover the shocking truth about {topic}. #shorts #facts #viral",
             "tags": [topic.lower().split()[0], "facts", "shorts", "viral", "truth"]
