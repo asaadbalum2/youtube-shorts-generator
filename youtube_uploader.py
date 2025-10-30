@@ -162,7 +162,7 @@ class YouTubeUploader:
                             print("  - Regenerate OAuth token")
                             print("  - Update Replit Secrets")
                             print("\nThe app will automatically retry once token is updated.")
-                            print("="*70 ahora"\n")
+                            print("="*70 + "\n")
                             raise Exception("Refresh token expired. See instructions above to regenerate.")
                         
                         # Try re-authenticating (might be a temporary issue)
