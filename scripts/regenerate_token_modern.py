@@ -27,6 +27,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         
         if 'code' in params:
             OAuthCallbackHandler.auth_code = params['code'][0]
+            OAuthCallbackHandler._code_received = True
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -176,19 +177,59 @@ def regenerate_token_modern():
     
     print()
     print("Step 3: Waiting for authorization...")
-    print("After you authorize, you'll be redirected back here automatically.")
-    print("The browser window will show a success message - you can close it.")
+    print()
+    print("⚠️  NOTE: Since you're using Replit, localhost redirect won't work from your browser.")
+    print("After authorizing, Google will redirect to localhost:8080 (which won't load).")
+    print()
+    print("INSTEAD: Look at the browser address bar - you'll see a URL like:")
+    print("http://localhost:8080/?code=4/0Ab32j92...")
+    print()
+    print("The authorization code is the part after 'code='")
+    print()
+    print("Copy just the code part (everything after 'code=' and before '&')")
+    print("Then paste it below:")
     print()
     
     # Wait for authorization code (max 5 minutes)
+    # Also check if user manually pastes code
     timeout = 300
     start_time = time.time()
     
+    print("Waiting for callback or manual code entry...")
+    print("(If localhost doesn't work, paste the code manually)")
+    print()
+    
     while OAuthCallbackHandler.auth_code is None and OAuthCallbackHandler.error is None:
+        # Check if server received callback
+        if hasattr(OAuthCallbackHandler, '_code_received') and OAuthCallbackHandler._code_received:
+            break
+            
+        # Also allow manual entry after 10 seconds
+        if time.time() - start_time > 10:
+            # Try getting code from user input as fallback
+            try:
+                import select
+                import sys
+                if select.select([sys.stdin], [], [], 0)[0]:
+                    manual_code = input("Paste authorization code here (or press Enter to keep waiting): ").strip()
+                    if manual_code:
+                        OAuthCallbackHandler.auth_code = manual_code
+                        break
+            except:
+                pass  # select not available on Windows/Replit
+        
         if time.time() - start_time > timeout:
+            print()
             print("⏱️  Timeout waiting for authorization")
-            server.shutdown()
-            return None
+            print()
+            print("If you saw a redirect URL in your browser with 'code=' in it,")
+            print("please paste just the code part here:")
+            manual_code = input("Authorization code: ").strip()
+            if manual_code:
+                OAuthCallbackHandler.auth_code = manual_code
+            else:
+                server.shutdown()
+                return None
         time.sleep(0.5)
     
     # Clean up server
@@ -197,13 +238,37 @@ def regenerate_token_modern():
     if OAuthCallbackHandler.error:
         print(f"❌ Authorization error: {OAuthCallbackHandler.error}")
         print()
-        print("Common causes:")
-        print("1. Redirect URI not added to Google Cloud Console")
-        print("2. OAuth consent screen not configured")
-        print("3. App not published or user not added as test user")
-        return None
+        print("If you saw a URL in your browser, try extracting the code manually:")
+        print("1. Look for 'code=' in the URL")
+        print("2. Copy everything after 'code=' and before '&'")
+        print("3. Paste it below:")
+        manual_code = input("Authorization code: ").strip()
+        if manual_code:
+            OAuthCallbackHandler.auth_code = manual_code
+        else:
+            print()
+            print("Common causes:")
+            print("1. Redirect URI not added to Google Cloud Console")
+            print("2. OAuth consent screen not configured")
+            print("3. App not published or user not added as test user")
+            return None
     
     auth_code = OAuthCallbackHandler.auth_code
+    
+    # If still no code, ask manually
+    if not auth_code:
+        print()
+        print("No code received via callback.")
+        print()
+        print("Please extract the code from your browser:")
+        print("1. Look at the URL in your browser (even if page didn't load)")
+        print("2. Find the part after 'code='")
+        print("3. Copy everything between 'code=' and '&' (or end of URL)")
+        print()
+        auth_code = input("Paste authorization code here: ").strip()
+        if not auth_code:
+            print("❌ No code provided")
+            return None
     
     if not auth_code:
         print("❌ No authorization code received")
