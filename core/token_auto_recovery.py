@@ -35,11 +35,12 @@ def regenerate_token_auto() -> Optional[str]:
         print("❌ Error: YouTube credentials not configured!")
         return None
     
-    # Build authorization URL
+    # Build authorization URL - Use localhost redirect (OOB flow is blocked by Google)
+    redirect_uri = "http://localhost:8080"
     auth_url = (
         "https://accounts.google.com/o/oauth2/auth?"
         f"client_id={client_id}&"
-        "redirect_uri=urn:ietf:wg:oauth:2.0:oob&"
+        f"redirect_uri={redirect_uri}&"
         "response_type=code&"
         "scope=https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube&"
         "access_type=offline&"
