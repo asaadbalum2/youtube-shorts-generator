@@ -132,7 +132,51 @@ Name: LOG_LEVEL
 Value: INFO
 ```
 
+**B-Roll Media (CRITICAL - Required for visuals!):**
+```
+Name: PEXELS_API_KEY
+Value: your_pexels_api_key
+```
+
+```
+Name: PIXABAY_API_KEY
+Value: your_pixabay_api_key
+```
+
+**Trending Music (Recommended):**
+```
+Name: JAMENDO_CLIENT_ID
+Value: your_jamendo_client_id
+```
+
+```
+Name: JAMENDO_CLIENT_SECRET
+Value: your_jamendo_client_secret
+```
+
+**Web Dashboard (Optional):**
+```
+Name: rt:secret
+Value: any_random_string_for_session_security
+```
+
 **Add all of them!** Click "New secret" for each one.
+
+### Complete Secret List Summary:
+
+**✅ REQUIRED:**
+- `GROQ_API_KEY` - AI content generation
+- `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN`, `YOUTUBE_CHANNEL_ID` - YouTube uploads
+- `PEXELS_API_KEY` OR `PIXABAY_API_KEY` - B-roll visuals (at least one!)
+
+**⭐ RECOMMENDED:**
+- `JAMENDO_CLIENT_ID`, `JAMENDO_CLIENT_SECRET` - Trending music
+- `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` - Trending topics
+
+**⚙️ OPTIONAL:**
+- `VIDEOS_PER_DAY` - Number of videos per day (default: 3)
+- `LOG_LEVEL` - Logging level (default: INFO)
+- `SESSION_SECRET` - Web dashboard security
 
 ---
 
