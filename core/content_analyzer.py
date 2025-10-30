@@ -66,7 +66,12 @@ Return JSON format:
             
             content = response.choices[0].message.content
             
-            # Parse JSON
+            # Check if content is empty
+            if not content or not content.strip():
+                print("⚠️ Content analysis: Empty response from AI, using fallback")
+                return self._fallback_analysis(topic, script)
+            
+            # Parse JSON - extract from markdown code blocks if present
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0].strip()
             elif "```" in content:
@@ -77,6 +82,11 @@ Return JSON format:
             # Also remove any remaining control chars
             content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
             
+            # Check again after cleaning
+            if not content or not content.strip():
+                print("⚠️ Content analysis: Content empty after cleaning, using fallback")
+                return self._fallback_analysis(topic, script)
+            
             # Try to parse JSON, with better error handling
             try:
                 analysis = json.loads(content)
@@ -85,16 +95,23 @@ Return JSON format:
             except json.JSONDecodeError as json_error:
                 print(f"⚠️ JSON parse error: {json_error}")
                 # Try to extract JSON if wrapped in text
-                import json as json_module  # Use different name to avoid shadowing
-                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                # Use balanced bracket matching to find the JSON object
+                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
                 if json_match:
                     try:
-                        analysis = json_module.loads(json_match.group(0))
+                        json_str = json_match.group(0)
+                        # Clean the extracted JSON
+                        json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
+                        analysis = json.loads(json_str)
                         print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
                         return analysis
-                    except:
-                        pass
-                print(f"⚠️ Raw content: {content[:200]}...")
+                    except Exception as extract_error:
+                        print(f"⚠️ Failed to parse extracted JSON: {extract_error}")
+                
+                # Log raw content for debugging (first 500 chars)
+                print(f"⚠️ Raw content (first 500 chars): {content[:500]}")
+                if len(content) > 500:
+                    print(f"⚠️ ... (content length: {len(content)} chars)")
                 return self._fallback_analysis(topic, script)
             
         except Exception as e:
