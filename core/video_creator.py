@@ -163,21 +163,25 @@ class VideoCreator:
     
     def _add_rhythm_pauses(self, script: str, voice_style: str) -> str:
         """Add strategic pauses to script for better rhythm and pacing"""
-        # Add pauses after commas, periods, and key phrases for better flow
-        # This makes narration more engaging without needing SSML
+        # Edge TTS naturally pauses on commas and periods
+        # We ensure good punctuation and add strategic commas for better flow
         
-        # For energetic/dramatic styles: add shorter pauses (faster pace)
+        # For energetic/dramatic styles: ensure crisp punctuation (faster pace)
         if voice_style in ['energetic', 'dramatic']:
-            # Replace periods with periods + slight pause
-            script = script.replace('. ', '. ... ')
-            # Replace commas with commas + micro pause
-            script = script.replace(', ', ', .. ')
+            # Ensure periods and commas are present for natural pauses
+            # Edge TTS will pause on these naturally
+            script = script.replace('! ', '. ')  # Exclamation = period pause
+            script = script.replace('? ', '. ')  # Question = period pause
+            # Add commas before "and", "but", "or" for better flow
+            script = script.replace(' and ', ', and ')
+            script = script.replace(' but ', ', but ')
         elif voice_style in ['calm', 'professional']:
-            # For calm styles: natural pauses (keep as is)
-            pass
+            # For calm styles: ensure natural pauses are present
+            pass  # Keep original pacing
         else:
-            # For casual/friendly: subtle pauses for engagement
-            script = script.replace('. ', '. ... ')
+            # For casual/friendly: add strategic commas for engagement
+            script = script.replace(' and ', ', and ')
+            script = script.replace(' but ', ', but ')
         
         return script
     
