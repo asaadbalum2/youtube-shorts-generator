@@ -133,11 +133,78 @@ async def dashboard(request: Request):
 
 @app.post("/api/generate")
 async def trigger_generation():
-    """API endpoint to trigger video generation - redirects to main app"""
-    return JSONResponse({
-        "status": "redirect",
-        "message": "Use POST /generate on the main app endpoint (not /dashboard/api/generate)"
-    })
+    """API endpoint to trigger video generation (with upload)"""
+    try:
+        # This would typically call the main app's generation
+        # For now, redirect to no-upload version
+        return await generate_video_no_upload()
+    except Exception as e:
+        return JSONResponse({
+            "status": "error",
+            "message": str(e)
+        }, status_code=500)
+
+@app.post("/api/generate-no-upload")
+async def generate_video_no_upload():
+    """Generate video without uploading to YouTube"""
+    try:
+        from core.topic_discovery import TopicDiscoveryAgent
+        from core.content_generator import ContentGenerator
+        from core.video_creator import VideoCreator
+        from core.database import Database
+        
+        print("🎬 Generating video (no upload)...")
+        
+        # Discover trending topic
+        discoverer = TopicDiscoveryAgent()
+        topics = discoverer.discover_trending_topics()
+        if not topics:
+            return JSONResponse({
+                "status": "error",
+                "message": "No topics found"
+            }, status_code=500)
+        
+        topic = topics[0]
+        topic_title = topic.get('title', topic.get('topic', 'Unknown Topic'))
+        print(f"📝 Selected topic: {topic_title}")
+        
+        # Generate content
+        generator = ContentGenerator()
+        content = generator.generate_video_content(topic_title)
+        
+        # Create video
+        creator = VideoCreator()
+        video_path = creator.create_video(content, topic_title)
+        print(f"✅ Video created: {video_path}")
+        
+        # Add to database
+        db = Database()
+        import os
+        video_id = os.path.splitext(os.path.basename(video_path))[0]
+        
+        db.add_video({
+            'video_id': video_id,
+            'title': content.get('title', topic_title),
+            'topic': topic_title,
+            'status': 'created',
+            'video_file_path': video_path
+        })
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"Video generated successfully: {content.get('title', topic_title)}",
+            "video_id": video_id,
+            "video_path": video_path
+        })
+        
+    except Exception as e:
+        print(f"❌ Error generating video: {e}")
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({
+            "status": "error",
+            "message": str(e)
+        }, status_code=500)
 
 @app.get("/api/stats")
 async def get_stats():
@@ -340,6 +407,66 @@ async def test_reddit():
             "success": False,
             "error": f"Error testing Reddit API: {str(e)}"
         }
+
+@app.delete("/api/delete-video/{video_id}")
+async def delete_video(video_id: str):
+    """Delete a video from database and disk"""
+    try:
+        from core.database import Database
+        import os
+        
+        print(f"🗑️ Delete request for video ID: {video_id}")
+        
+        db = Database()
+        
+        # Get video info from database
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT title, video_file_path, status 
+            FROM videos 
+            WHERE video_id = ?
+        """, (video_id,))
+        
+        result = cursor.fetchone()
+        
+        if not result:
+            conn.close()
+            return JSONResponse({"error": "Video not found"}, status_code=404)
+        
+        title, file_path, status = result
+        print(f"🗑️ Video details - Title: {title}, File: {file_path}")
+        
+        # Delete from database
+        cursor.execute("DELETE FROM videos WHERE video_id = ?", (video_id,))
+        conn.commit()
+        conn.close()
+        print(f"✅ Video deleted from database: {video_id}")
+        
+        # Delete file from disk
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                print(f"✅ Video file deleted from disk: {file_path}")
+            except Exception as e:
+                print(f"⚠️ Could not delete file: {e}")
+                return JSONResponse({
+                    "status": "partial_success",
+                    "message": f"Deleted from database but could not delete file: {str(e)}"
+                })
+        else:
+            print(f"⚠️ File not found on disk: {file_path}")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"Video '{title}' deleted successfully"
+        })
+        
+    except Exception as e:
+        print(f"❌ Delete error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"error": f"Delete failed: {str(e)}"}, status_code=500)
 
 @app.get("/api/download-video/{video_id}")
 async def download_video(video_id: str):
