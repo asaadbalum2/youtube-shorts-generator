@@ -35,13 +35,7 @@ class TopicDiscoveryAgent:
                     client_secret=Config.REDDIT_CLIENT_SECRET,
                     user_agent=Config.REDDIT_USER_AGENT
                 )
-                # Test connection (without OAuth - script apps don't need user.me())
-                # Just try to access a subreddit to verify credentials work
-                try:
-                    _ = self.reddit.subreddit('test').id  # Simple test
-                    print("✅ Reddit client initialized")
-                except Exception as test_error:
-                    print(f"⚠️ Reddit credentials might be invalid: {test_error}")
+                print("✅ Reddit client initialized")
             except Exception as e:
                 print(f"⚠️ Reddit client initialization failed: {e}")
                 self.reddit = None
@@ -93,19 +87,24 @@ class TopicDiscoveryAgent:
                          'LifeProTips', 'AskReddit', 'funny', 'interestingasfuck']
             
             for subreddit_name in subreddits[:3]:  # Limit for API rate limits
-                subreddit = self.reddit.subreddit(subreddit_name)
-                for post in subreddit.hot(limit=5):
-                    if post.score > 100:  # Minimum engagement threshold
-                        topics.append({
-                            'topic': post.title,
-                            'source': f'reddit/{subreddit_name}',
-                            'score': min(post.score / 100, 10),  # Normalize score
-                            'metadata': {
-                                'upvotes': post.score,
-                                'comments': post.num_comments,
-                                'url': post.url
-                            }
-                        })
+                try:
+                    subreddit = self.reddit.subreddit(subreddit_name)
+                    for post in subreddit.hot(limit=5):
+                        if post.score > 100:  # Minimum engagement threshold
+                            topics.append({
+                                'topic': post.title,
+                                'source': f'reddit/{subreddit_name}',
+                                'score': min(post.score / 100, 10),  # Normalize score
+                                'metadata': {
+                                    'upvotes': post.score,
+                                    'comments': post.num_comments,
+                                    'url': post.url
+                                }
+                            })
+                except Exception as subreddit_error:
+                    print(f"⚠️ Error accessing subreddit {subreddit_name}: {subreddit_error}")
+                    continue
+                    
         except Exception as e:
             print(f"Error fetching Reddit trends: {e}")
         

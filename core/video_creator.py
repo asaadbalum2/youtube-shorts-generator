@@ -1,191 +1,243 @@
 """
 Video creation module - generates YouTube Shorts videos
-Uses FFmpeg/MoviePy for video processing
+Uses FFmpeg/MoviePy for video processing with real b-roll from Pexels/Pixabay
 """
 import os
 import random
+import requests
 from moviepy.editor import (
     VideoFileClip, ImageClip, TextClip, CompositeVideoClip,
-    AudioFileClip, concatenate_videoclips
+    AudioFileClip, concatenate_videoclips, ColorClip
 )
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 import numpy as np
 from gtts import gTTS
 import tempfile
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from core.config import Config
+from core.media_providers import MediaFetcher
 
 class VideoCreator:
     def __init__(self):
         self.temp_dir = Config.TEMP_DIR
         self.output_dir = Config.OUTPUT_DIR
+        self.media_fetcher = MediaFetcher()
         os.makedirs(self.temp_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
+        
+        # High-quality settings
+        self.video_size = (1080, 1920)  # 9:16 for YouTube Shorts
+        self.font_sizes = [180, 160, 140, 120, 100]  # Much larger fonts
+        self.font_paths = [
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/calibri.ttf", 
+            "C:/Windows/Fonts/impact.ttf",
+            "C:/Windows/Fonts/verdana.ttf",
+            "C:/Windows/Fonts/georgia.ttf"
+        ]
     
     def create_video(self, content: Dict, topic: str) -> str:
         """
-        Create a YouTube Shorts video from content
+        Create a high-quality YouTube Shorts video with real b-roll
         
         Returns: Path to created video file
         """
         script = content.get('script', '')
+        print(f"🎬 Creating high-quality video for: {topic}")
         
-        # 1. Generate audio (TTS)
-        audio_path = self._generate_audio(script)
+        # 1. Generate high-quality audio (TTS)
+        audio_path = self._generate_high_quality_audio(script)
         
         # 2. Calculate duration
         audio_clip = AudioFileClip(audio_path)
         duration = min(audio_clip.duration, Config.TARGET_DURATION_SECONDS)
+        print(f"📏 Video duration: {duration:.1f}s")
         
-        # 3. Create visual sequence
-        video_clips = self._create_visuals(script, duration, topic)
+        # 3. Fetch real b-roll images/videos
+        broll_media = self._fetch_broll_media(topic, duration)
         
-        # 4. Combine audio and visuals
+        # 4. Create high-quality visual sequence
+        video_clips = self._create_high_quality_visuals(script, duration, topic, broll_media)
+        
+        # 5. Combine audio and visuals
         final_video = self._combine_audio_video(video_clips, audio_path, duration)
         
-        # 5. Export video
+        # 6. Export high-quality video
         video_id = f"short_{topic.replace(' ', '_')[:20]}_{random.randint(1000, 9999)}"
         output_path = os.path.join(self.output_dir, f"{video_id}.mp4")
         
+        print(f"🎥 Exporting to: {output_path}")
         final_video.write_videofile(
             output_path,
             fps=30,
             codec='libx264',
             audio_codec='aac',
-            preset='slow',  # Better quality
-            bitrate='8000k',  # Higher bitrate
-            audio_bitrate='192k',  # Better audio quality
             temp_audiofile='temp-audio.m4a',
-            remove_temp=True
+            remove_temp=True,
+            preset='slow',  # Best quality
+            bitrate='12000k',  # Very high bitrate
+            audio_bitrate='256k',  # Very high audio quality
+            ffmpeg_params=['-crf', '18']  # High quality encoding
         )
         
         # Cleanup
         audio_clip.close()
         final_video.close()
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
         
+        print(f"✅ High-quality video created: {output_path}")
         return output_path
     
-    def _generate_audio(self, script: str) -> str:
-        """Generate TTS audio from script with better quality"""
-        # Use slower, more natural speech
-        tts = gTTS(text=script, lang='en', slow=True)  # Slower for better quality
+    def _generate_high_quality_audio(self, script: str) -> str:
+        """Generate high-quality TTS audio from script"""
+        print("🎤 Generating high-quality TTS audio...")
+        
+        # Use slower, more natural speech with better voice
+        tts = gTTS(
+            text=script, 
+            lang='en', 
+            slow=True,  # Slower for better quality
+            tld='com.au'  # Australian accent for more natural sound
+        )
+        
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
         tts.save(audio_path)
+        
+        print(f"✅ Audio saved: {audio_path}")
         return audio_path
     
-    def _create_visuals(self, script: str, duration: float, topic: str) -> list:
-        """
-        Create visual sequence for the video
-        Uses AI-generated or styled images with text overlays
-        """
+    def _fetch_broll_media(self, topic: str, duration: float) -> List[Dict]:
+        """Fetch real b-roll images and videos from Pexels/Pixabay"""
+        print(f"🖼️ Fetching b-roll media for: {topic}")
+        
+        # Generate search keywords from topic
+        keywords = self._extract_keywords(topic)
+        
+        all_media = []
+        for keyword in keywords[:3]:  # Try top 3 keywords
+            print(f"🔍 Searching for: {keyword}")
+            
+            # Try to get video first (more engaging)
+            media = self.media_fetcher.get_image(keyword, prefer_video=True)
+            if media:
+                all_media.append(media)
+                print(f"✅ Found {media['provider']} media: {keyword}")
+            else:
+                # Fallback to images
+                media = self.media_fetcher.get_image(keyword, prefer_video=False)
+                if media:
+                    all_media.append(media)
+                    print(f"✅ Found {media['provider']} image: {keyword}")
+        
+        # If no media found, use fallback
+        if not all_media:
+            print("⚠️ No b-roll found, using fallback backgrounds")
+            all_media = [self._create_fallback_media()]
+        
+        print(f"📸 Total b-roll items: {len(all_media)}")
+        return all_media
+    
+    def _extract_keywords(self, topic: str) -> List[str]:
+        """Extract search keywords from topic"""
+        # Simple keyword extraction
+        words = topic.lower().split()
+        
+        # Remove common words
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'about', 'that', 'this', 'these', 'those'}
+        keywords = [word for word in words if word not in stop_words and len(word) > 2]
+        
+        # Add the full topic as first keyword
+        keywords.insert(0, topic)
+        
+        return keywords[:5]  # Top 5 keywords
+    
+    def _create_fallback_media(self) -> Dict:
+        """Create fallback media when APIs fail"""
+        return {
+            'id': 'fallback',
+            'url': None,
+            'provider': 'fallback',
+            'type': 'image'
+        }
+    
+    def _create_high_quality_visuals(self, script: str, duration: float, topic: str, broll_media: List[Dict]) -> List:
+        """Create high-quality visual sequence with real b-roll"""
+        print("🎨 Creating high-quality visuals...")
+        
         clips = []
         
-        # Split script into segments (roughly by sentences)
+        # Split script into segments
         segments = self._split_script_into_segments(script)
         segment_duration = duration / len(segments) if segments else duration
         
         for i, segment in enumerate(segments):
-            # Create text-based image for each segment
-            image_path = self._create_text_image(segment, topic, i)
+            print(f"📝 Processing segment {i+1}/{len(segments)}: {segment[:50]}...")
             
-            # Convert to video clip
-            img_clip = ImageClip(image_path)
-            img_clip = img_clip.set_duration(segment_duration)
-            img_clip = img_clip.set_fps(30)
+            # Get b-roll for this segment
+            media = broll_media[i % len(broll_media)] if broll_media else self._create_fallback_media()
             
-            clips.append(img_clip)
+            # Create visual for segment
+            if media['provider'] == 'fallback':
+                clip = self._create_fallback_visual(segment, topic, i, segment_duration)
+            else:
+                clip = self._create_broll_visual(segment, media, i, segment_duration)
             
-            # Cleanup temp image
-            if os.path.exists(image_path) and i > 0:  # Keep first for debugging
-                pass  # Keep for now
+            clips.append(clip)
         
+        print(f"✅ Created {len(clips)} visual segments")
         return clips
     
-    def _create_text_image(self, text: str, topic: str, index: int) -> str:
-        """Create a styled image with text overlay"""
-        # Canvas size for YouTube Shorts (9:16 aspect ratio)
-        width, height = 1080, 1920
-        
-        # Create image with gradient background
-        img = Image.new('RGB', (width, height), color=self._get_gradient_color(index))
-        draw = ImageDraw.Draw(img)
-        
-        # Try to load a font, fallback to default
+    def _create_broll_visual(self, text: str, media: Dict, index: int, duration: float) -> CompositeVideoClip:
+        """Create visual using real b-roll media"""
         try:
-            # Try different font paths with larger sizes
-            font_sizes = [140, 120, 100, 80]  # Larger fonts
-            font = None
-            for size in font_sizes:
-                try:
-                    font = ImageFont.truetype("arial.ttf", size)
-                    break
-                except:
-                    try:
-                        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size)
-                        break
-                    except:
-                        try:
-                            font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", size)
-                            break
-                        except:
-                            pass
-            
-            if not font:
-                font = ImageFont.load_default()
-        except:
-            font = ImageFont.load_default()
+            # Download and process the media
+            if media.get('url'):
+                media_path = self._download_media(media['url'], index)
+                
+                if media_path and os.path.exists(media_path):
+                    # Create base clip from b-roll
+                    if media.get('type') == 'video' or media_path.endswith('.mp4'):
+                        base_clip = VideoFileClip(media_path)
+                    else:
+                        base_clip = ImageClip(media_path)
+                    
+                    # Resize to fit 9:16 aspect ratio
+                    base_clip = self._resize_for_shorts(base_clip)
+                    
+                    # Add text overlay
+                    text_clip = self._create_kinetic_text(text, index)
+                    
+                    # Create composite
+                    final_clip = CompositeVideoClip([
+                        base_clip.set_duration(duration),
+                        text_clip.set_duration(duration)
+                    ])
+                    
+                    return final_clip
+        except Exception as e:
+            print(f"⚠️ Error creating b-roll visual: {e}")
         
-        # Word wrap text
-        lines = self._wrap_text(text, font, width - 200)
-        
-        # Calculate text positioning (centered)
-        # Get line height
-        if hasattr(draw, 'textbbox'):
-            test_bbox = draw.textbbox((0, 0), 'A', font=font)
-            line_height = test_bbox[3] - test_bbox[1]
-        else:
-            try:
-                line_height = font.getsize('A')[1]
-            except:
-                line_height = 60
-        
-        total_height = len(lines) * line_height * 1.2
-        start_y = (height - total_height) // 2
-        
-        # Draw text with outline for readability
-        y_offset = start_y
-        for line in lines:
-            # Calculate text width
-            if hasattr(draw, 'textbbox'):
-                bbox = draw.textbbox((0, 0), line, font=font)
-                text_width = bbox[2] - bbox[0]
-            else:
-                try:
-                    text_width = draw.textsize(line, font=font)[0]
-                except:
-                    text_width = len(line) * 20
-            
-            x = (width - text_width) // 2
-            
-            # Draw text shadow/outline
-            for adj in range(-2, 3):
-                for adjy in range(-2, 3):
-                    draw.text((x + adj, y_offset + adjy), line, font=font, fill=(0, 0, 0, 200))
-            
-            # Draw main text
-            draw.text((x, y_offset), line, font=font, fill=(255, 255, 255))
-            y_offset += int(line_height * 1.2)
-        
-        # Save image
-        image_path = os.path.join(self.temp_dir, f"frame_{index}_{random.randint(10000, 99999)}.png")
-        img.save(image_path)
-        
-        return image_path
+        # Fallback to text-only
+        return self._create_fallback_visual(text, "", index, duration)
     
-    def _get_gradient_color(self, index: int) -> tuple:
-        """Generate gradient colors for visual variety"""
+    def _create_fallback_visual(self, text: str, topic: str, index: int, duration: float) -> CompositeVideoClip:
+        """Create high-quality text-only visual as fallback"""
+        # Create animated background
+        bg_clip = self._create_animated_background(index, duration)
+        
+        # Create kinetic text
+        text_clip = self._create_kinetic_text(text, index)
+        
+        # Composite
+        final_clip = CompositeVideoClip([
+            bg_clip,
+            text_clip
+        ])
+        
+        return final_clip
+    
+    def _create_animated_background(self, index: int, duration: float) -> ColorClip:
+        """Create animated gradient background"""
+        # Create gradient colors
         colors = [
             (41, 128, 185),    # Blue
             (142, 68, 173),    # Purple
@@ -194,52 +246,120 @@ class VideoCreator:
             (46, 204, 113),    # Green
             (52, 152, 219),    # Light Blue
         ]
-        return colors[index % len(colors)]
-    
-    def _wrap_text(self, text: str, font, max_width: int) -> list:
-        """Wrap text to fit within max_width"""
-        words = text.split()
-        lines = []
-        current_line = []
         
-        for word in words:
-            test_line = ' '.join(current_line + [word])
-            # Estimate width (rough approximation)
-            test_width = len(test_line) * 30  # Rough estimate
+        color = colors[index % len(colors)]
+        
+        # Create color clip with slight animation
+        bg_clip = ColorClip(
+            size=self.video_size,
+            color=color,
+            duration=duration
+        )
+        
+        return bg_clip
+    
+    def _create_kinetic_text(self, text: str, index: int) -> TextClip:
+        """Create kinetic text with animations and effects"""
+        # Choose font
+        font_path = self.font_paths[index % len(self.font_paths)]
+        font_size = self.font_sizes[index % len(self.font_sizes)]
+        
+        # Create text clip with high quality
+        text_clip = TextClip(
+            text,
+            fontsize=font_size,
+            color='white',
+            font=font_path,
+            stroke_color='black',
+            stroke_width=3,
+            method='caption',
+            size=(self.video_size[0] - 100, None),
+            align='center'
+        ).set_position('center')
+        
+        # Add entrance animation
+        text_clip = text_clip.set_start(0.2).fadein(0.3)
+        
+        return text_clip
+    
+    def _download_media(self, url: str, index: int) -> Optional[str]:
+        """Download media from URL"""
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
             
-            if test_width <= max_width:
-                current_line.append(word)
-            else:
-                if current_line:
-                    lines.append(' '.join(current_line))
-                current_line = [word]
-        
-        if current_line:
-            lines.append(' '.join(current_line))
-        
-        return lines
+            # Determine file extension
+            ext = '.jpg'
+            if 'video' in response.headers.get('content-type', ''):
+                ext = '.mp4'
+            elif 'png' in response.headers.get('content-type', ''):
+                ext = '.png'
+            
+            # Save file
+            media_path = os.path.join(self.temp_dir, f"media_{index}_{random.randint(10000, 99999)}{ext}")
+            with open(media_path, 'wb') as f:
+                f.write(response.content)
+            
+            print(f"✅ Downloaded media: {media_path}")
+            return media_path
+            
+        except Exception as e:
+            print(f"❌ Error downloading media: {e}")
+            return None
     
-    def _split_script_into_segments(self, script: str) -> list:
+    def _resize_for_shorts(self, clip) -> VideoFileClip:
+        """Resize clip to fit 9:16 aspect ratio for YouTube Shorts"""
+        # Get current dimensions
+        w, h = clip.size
+        
+        # Calculate target dimensions (9:16 aspect ratio)
+        target_w, target_h = self.video_size
+        
+        # Calculate scale factor to fill the frame
+        scale_w = target_w / w
+        scale_h = target_h / h
+        scale = max(scale_w, scale_h)  # Use larger scale to fill frame
+        
+        # Resize
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        
+        clip = clip.resize((new_w, new_h))
+        
+        # Crop to exact size if needed
+        if new_w > target_w or new_h > target_h:
+            x_center = new_w // 2
+            y_center = new_h // 2
+            clip = clip.crop(
+                x_center=x_center,
+                y_center=y_center,
+                width=target_w,
+                height=target_h
+            )
+        
+        return clip
+    
+    def _split_script_into_segments(self, script: str) -> List[str]:
         """Split script into visual segments"""
-        # Split by sentences
         import re
+        
+        # Split by sentences
         sentences = re.split(r'[.!?]+', script)
         segments = [s.strip() for s in sentences if s.strip()]
         
-        # Group into segments of 2-3 sentences for better pacing
+        # Group into segments of 1-2 sentences for better pacing
         grouped = []
         for i in range(0, len(segments), 2):
-            group = segments[i:i+3]
+            group = segments[i:i+2]
             grouped.append(' '.join(group))
         
         return grouped if grouped else [script]
     
-    def _combine_audio_video(self, video_clips: list, audio_path: str, duration: float) -> CompositeVideoClip:
+    def _combine_audio_video(self, video_clips: List, audio_path: str, duration: float) -> CompositeVideoClip:
         """Combine video clips with audio"""
         if not video_clips:
             # Create a simple placeholder if no clips
-            blank_clip = ImageClip(np.zeros((1920, 1080, 3), dtype=np.uint8))
-            blank_clip = blank_clip.set_duration(duration)
+            blank_clip = ColorClip(size=self.video_size, color=(0, 0, 0), duration=duration)
             video_clips = [blank_clip]
         
         # Concatenate video clips
@@ -253,4 +373,3 @@ class VideoCreator:
         final_video = final_video.set_duration(min(duration, final_video.duration))
         
         return final_video
-

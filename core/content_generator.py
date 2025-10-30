@@ -71,11 +71,14 @@ Format your response as JSON:
             
             content = response.choices[0].message.content
             
-            # Parse JSON
+            # Parse JSON - clean content first
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0].strip()
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
+            
+            # Clean invalid control characters
+            content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
             
             video_content = json.loads(content)
             
