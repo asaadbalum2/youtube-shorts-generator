@@ -391,11 +391,13 @@ class VideoCreator:
     def _create_kinetic_text(self, text: str, index: int) -> TextClip:
         """Create modern YouTube Shorts style subtitles"""
         # Modern fonts - YouTube Shorts style (clean, bold, modern)
+        # Modern fonts for YouTube Shorts - prioritize bold fonts for visibility
         font_paths = [
-            "C:/Windows/Fonts/arial.ttf",  # Clean modern
-            "C:/Windows/Fonts/arialbd.ttf",  # Bold for emphasis
-            "C:/Windows/Fonts/calibri.ttf",  # Modern sans-serif
-            "C:/Windows/Fonts/segoeui.ttf",  # Windows modern font
+            "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold - clean and modern
+            "C:/Windows/Fonts/segoeuib.ttf",  # Segoe UI Bold - Windows modern
+            "C:/Windows/Fonts/calibrib.ttf",  # Calibri Bold
+            "C:/Windows/Fonts/impact.ttf",  # Impact - bold and eye-catching
+            "C:/Windows/Fonts/arial.ttf",  # Fallback to regular Arial
         ]
         
         # Try to find a working modern font
