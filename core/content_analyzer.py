@@ -71,72 +71,88 @@ Return JSON format:
                 print("⚠️ Content analysis: Empty response from AI, using fallback")
                 return self._fallback_analysis(topic, script)
             
-            # Parse JSON - extract from markdown code blocks if present
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
+            # FIRST: Check if content starts with JSON or is wrapped in text
+            content_original = content.strip()
             
-            # Check if content is empty BEFORE cleaning
-            if not content or not content.strip():
+            # Check if content is empty
+            if not content_original:
                 print("⚠️ Content analysis: Empty response from AI, using fallback")
                 return self._fallback_analysis(topic, script)
             
-            # Clean invalid control characters MORE AGGRESSIVELY
-            # Remove ALL control characters and non-printable characters
-            content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
-            # Only keep printable characters and newlines/tabs
-            content = ''.join(char for char in content if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
-            # Remove invalid escape sequences
-            content = content.encode('utf-8', errors='ignore').decode('utf-8')
+            # Extract JSON from markdown code blocks if present
+            if "```json" in content_original:
+                content_original = content_original.split("```json")[1].split("```")[0].strip()
+            elif "```" in content_original:
+                content_original = content_original.split("```")[1].split("```")[0].strip()
             
-            # Check again after cleaning
-            if not content or not content.strip():
-                print("⚠️ Content analysis: Content empty after cleaning, using fallback")
-                print(f"⚠️ Debug: Content length before cleaning: {len(response.choices[0].message.content)}")
-                return self._fallback_analysis(topic, script)
+            # Clean invalid control characters
+            content_original = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content_original)
+            content_original = ''.join(char for char in content_original if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+            content_original = content_original.encode('utf-8', errors='ignore').decode('utf-8')
             
-            # Try to parse JSON, with better error handling
-            try:
-                analysis = json.loads(content)
-                print(f"✅ Content analyzed: {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
-                return analysis
-            except json.JSONDecodeError as json_error:
-                print(f"⚠️ JSON parse error: {json_error}")
-                print(f"⚠️ Raw content (first 500 chars): {content[:500] if len(content) > 0 else 'EMPTY'}")
-                # Try to extract JSON if wrapped in text
-                # Find the first { and matching closing }
-                start_idx = content.find('{')
+            # SMART EXTRACTION: If content doesn't start with { or [, extract JSON first
+            json_content = content_original.strip()
+            
+            # Check if content starts with JSON
+            if not json_content.startswith('{') and not json_content.startswith('['):
+                # Content has text prefix - extract JSON object
+                start_idx = json_content.find('{')
+                if start_idx == -1:
+                    start_idx = json_content.find('[')
+                
                 if start_idx != -1:
-                    # Find the matching closing brace by counting brackets
+                    # Find matching closing brace/bracket
                     bracket_count = 0
                     end_idx = start_idx
-                    for i in range(start_idx, len(content)):
-                        if content[i] == '{':
+                    open_char = json_content[start_idx]
+                    close_char = '}' if open_char == '{' else ']'
+                    
+                    for i in range(start_idx, len(json_content)):
+                        if json_content[i] == open_char:
                             bracket_count += 1
-                        elif content[i] == '}':
+                        elif json_content[i] == close_char:
                             bracket_count -= 1
                             if bracket_count == 0:
                                 end_idx = i + 1
                                 break
                     
                     if end_idx > start_idx:
-                        json_str = content[start_idx:end_idx]
+                        json_content = json_content[start_idx:end_idx]
+                        print(f"🔍 Extracted JSON from wrapped text (length: {len(json_content)})")
+            
+            # Try to parse JSON
+            try:
+                analysis = json.loads(json_content)
+                print(f"✅ Content analyzed: {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
+                return analysis
+            except json.JSONDecodeError as json_error:
+                # Last resort: try to find and parse any JSON object in the content
+                print(f"⚠️ JSON parse error: {json_error}")
+                print(f"⚠️ Attempted JSON content (first 300 chars): {json_content[:300]}")
+                
+                # Try to find ANY valid JSON object
+                start_idx = content_original.find('{')
+                if start_idx != -1:
+                    bracket_count = 0
+                    end_idx = start_idx
+                    for i in range(start_idx, len(content_original)):
+                        if content_original[i] == '{':
+                            bracket_count += 1
+                        elif content_original[i] == '}':
+                            bracket_count -= 1
+                            if bracket_count == 0:
+                                end_idx = i + 1
+                                break
+                    
+                    if end_idx > start_idx:
+                        json_str = content_original[start_idx:end_idx]
                         try:
-                            # Clean the extracted JSON MORE AGGRESSIVELY
-                            json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
-                            json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
-                            json_str = json_str.encode('utf-8', errors='ignore').decode('utf-8')
                             analysis = json.loads(json_str)
-                            print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
+                            print(f"✅ Content analyzed (fallback extraction): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
                             return analysis
                         except Exception as extract_error:
-                            print(f"⚠️ Failed to parse extracted JSON: {extract_error}")
+                            print(f"⚠️ Fallback extraction also failed: {extract_error}")
                 
-                # Log raw content for debugging (first 500 chars)
-                print(f"⚠️ Raw content (first 500 chars): {content[:500]}")
-                if len(content) > 500:
-                    print(f"⚠️ ... (content length: {len(content)} chars)")
                 return self._fallback_analysis(topic, script)
             
         except Exception as e:

@@ -52,22 +52,41 @@ class EdgeTTS:
                 print(f"⚠️ Text too long ({len(text_clean)} chars), truncating to {max_text_length}...")
                 text_clean = text_clean[:max_text_length].rsplit('.', 1)[0] + '.'  # Truncate at sentence boundary
             
-            # Try Edge TTS - verify voice exists first
+            # Try Edge TTS - ensure proper async handling and network timeout
             try:
-                # Verify voice is available
                 print(f"🔍 Attempting Edge TTS with voice: {voice_to_use}, text length: {len(text_clean)}")
                 
-                # Try to list voices to verify connectivity (optional debug)
-                # voices = await edge_tts.list_voices()
-                # print(f"🔍 Available voices check: {len(voices)} voices found")
-                
+                # Create Communicate object
                 communicate = edge_tts.Communicate(text_clean, voice_to_use)
                 
                 # Use a temporary file first to check if audio was generated
                 temp_output = output_path + '.tmp'
-                print(f"🔍 Saving to temp file: {temp_output}")
-                await communicate.save(temp_output)
-                print(f"🔍 Temp file created: {os.path.exists(temp_output)}, size: {os.path.getsize(temp_output) if os.path.exists(temp_output) else 0}")
+                
+                # Edge TTS requires proper async streaming - use stream() to collect all chunks
+                audio_chunks = []
+                
+                # Stream all audio chunks
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        audio_chunks.append(chunk["data"])
+                
+                # Combine all chunks
+                if audio_chunks:
+                    audio_data = b"".join(audio_chunks)
+                    
+                    # Verify we got audio data
+                    if audio_data and len(audio_data) > 1000:  # At least 1KB
+                        with open(temp_output, "wb") as f:
+                            f.write(audio_data)
+                        print(f"🔍 Audio data collected: {len(audio_data)} bytes from {len(audio_chunks)} chunks")
+                    else:
+                        print(f"⚠️ Edge TTS: Audio data too small ({len(audio_data) if audio_data else 0} bytes)")
+                        raise Exception(f"No audio data received: {len(audio_data) if audio_data else 0} bytes")
+                else:
+                    print(f"⚠️ Edge TTS: No audio chunks received")
+                    raise Exception("No audio chunks received from Edge TTS stream")
+                
+                print(f"🔍 Temp file created: exists={os.path.exists(temp_output)}, size={os.path.getsize(temp_output) if os.path.exists(temp_output) else 0}")
                 
                 # Verify file was created and has content
                 if os.path.exists(temp_output) and os.path.getsize(temp_output) > 1000:  # At least 1KB
