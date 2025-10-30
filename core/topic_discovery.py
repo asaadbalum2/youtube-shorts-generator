@@ -196,7 +196,6 @@ class TopicDiscoveryAgent:
                     content = content.split("```")[1].split("```")[0].strip()
                 
                 # Clean invalid control characters
-                import re
                 content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
                 content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
                 
@@ -205,27 +204,48 @@ class TopicDiscoveryAgent:
                     ai_topics_data = json.loads(content)
                 except json.JSONDecodeError:
                     # If that fails, try to extract JSON array from text
-                    # Look for JSON array pattern: [{...}]
-                    json_match = re.search(r'\[.*\]', content, re.DOTALL)
-                    if json_match:
+                    # The AI response might have text before/after like:
+                    # "Here are topics: [...] Note: ..."
+                    
+                    # Method 1: Find JSON array by looking for balanced brackets
+                    # Find the first '[' and last ']' and try to parse what's between
+                    first_bracket = content.find('[')
+                    last_bracket = content.rfind(']')
+                    
+                    if first_bracket != -1 and last_bracket != -1 and last_bracket > first_bracket:
+                        array_content = content[first_bracket:last_bracket + 1]
                         try:
-                            ai_topics_data = json.loads(json_match.group(0))
+                            ai_topics_data = json.loads(array_content)
                         except json.JSONDecodeError:
-                            # Try cleaning point by point - find individual objects
-                            # Look for all {topic: ...} objects in the text
-                            objects = re.findall(r'\{[^{}]*"topic"[^{}]*\}', content)
+                            # Method 2: Try finding individual topic objects
+                            # Look for objects with "topic" key (more lenient pattern)
+                            objects = []
+                            # Find all potential JSON objects
+                            bracket_count = 0
+                            start_idx = -1
+                            for i, char in enumerate(content):
+                                if char == '{':
+                                    if bracket_count == 0:
+                                        start_idx = i
+                                    bracket_count += 1
+                                elif char == '}':
+                                    bracket_count -= 1
+                                    if bracket_count == 0 and start_idx != -1:
+                                        obj_str = content[start_idx:i+1]
+                                        try:
+                                            obj = json.loads(obj_str)
+                                            if 'topic' in obj:  # Only keep objects with 'topic' key
+                                                objects.append(obj)
+                                        except:
+                                            pass
+                                        start_idx = -1
+                            
                             if objects:
-                                ai_topics_data = []
-                                for obj_str in objects:
-                                    try:
-                                        obj = json.loads(obj_str)
-                                        ai_topics_data.append(obj)
-                                    except:
-                                        continue
+                                ai_topics_data = objects
                             else:
-                                raise json.JSONDecodeError("No JSON array or objects found", content, 0)
+                                raise json.JSONDecodeError("No valid JSON array or objects found", content, 0)
                     else:
-                        raise json.JSONDecodeError("No JSON array found", content, 0)
+                        raise json.JSONDecodeError("No JSON array brackets found", content, 0)
                 
                 # Process topics
                 if isinstance(ai_topics_data, list):
