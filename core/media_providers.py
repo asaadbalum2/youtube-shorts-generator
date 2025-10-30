@@ -188,7 +188,7 @@ class PexelsProvider(MediaProvider):
                         video_url = vf.get('link')
                         break
                 # Then try SD if no HD
-                if not video_url那天:
+                if not video_url:
                     for vf in video_files:
                         if vf.get('quality') == 'sd' and vf.get('width', 0) >= 640:
                             video_url = vf.get('link')

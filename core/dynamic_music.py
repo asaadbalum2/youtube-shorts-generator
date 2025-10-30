@@ -52,7 +52,17 @@ class DynamicMusicSelector:
         # Jamendo's 'popularity_week' order gets tracks trending THIS WEEK automatically
         # This is updated weekly by Jamendo - you get fresh trending music without manual downloads
         jamendo = JamendoMusicAPI()
-        jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=[music_style, mood])
+        
+        # Build better search tags based on mood and style
+        search_tags = [music_style, mood]
+        if music_style == 'minimalist' and mood == 'informative':
+            search_tags = ['ambient', 'background', 'calm', 'electronic']  # Better for informative content
+        elif mood == 'dramatic':
+            search_tags = ['cinematic', 'epic', 'dramatic', 'orchestral']
+        elif mood == 'upbeat' or music_style == 'upbeat':
+            search_tags = ['energetic', 'upbeat', 'happy', 'electronic']
+        
+        jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=search_tags)
         if jamendo_music:
             print(f"✅ Using Jamendo trending music (automatically updated weekly, copyright-safe)")
             return jamendo_music
