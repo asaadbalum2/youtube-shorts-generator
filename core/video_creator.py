@@ -227,7 +227,7 @@ class VideoCreator:
                     except:
                         pass
                 if len(all_media) >= target_count:
-                    shell
+                    break
         
         # If no media found, use fallback
         if not all_media:

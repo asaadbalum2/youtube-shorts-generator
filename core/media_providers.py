@@ -96,7 +96,8 @@ class PixabayProvider(MediaProvider):
                         'preview_url': hit.get('picture_id'),
                         'duration': hit.get('duration', 0),
                         'tags': hit.get('tags', ''),
-                        'provider': 'pixabay'
+                        'provider': 'pixabay',
+                        'type': 'video'  # Explicitly mark as video
                     })
             
             print(f"✅ Pixabay: Found {len(results)} videos for '{query}'")
@@ -144,7 +145,8 @@ class PexelsProvider(MediaProvider):
                     'width': photo.get('width'),
                     'height': photo.get('height'),
                     'tags': photo.get('alt', ''),
-                    'provider': 'pexels'
+                    'provider': 'pexels',
+                    'type': 'image'  # Explicitly mark as image
                 })
             
             print(f"✅ Pexels: Found {len(results)} images for '{query}'")
@@ -178,13 +180,20 @@ class PexelsProvider(MediaProvider):
             results = []
             for video in data.get('videos', []):
                 video_files = video.get('video_files', [])
-                # Get medium quality video
+                # PRIORITIZE HD quality videos (high resolution)
                 video_url = None
+                # First try HD (highest quality)
                 for vf in video_files:
-                    if vf.get('quality') == 'hd' or vf.get('quality') == 'sd':
+                    if vf.get('quality') == 'hd' and vf.get('width', 0) >= 720:  # HD = 720p+
                         video_url = vf.get('link')
                         break
-                
+                # Then try SD if no HD
+                if not video_url那天:
+                    for vf in video_files:
+                        if vf.get('quality') == 'sd' and vf.get('width', 0) >= 640:
+                            video_url = vf.get('link')
+                            break
+                # Last resort: any video
                 if not video_url and video_files:
                     video_url = video_files[0].get('link')
                 
