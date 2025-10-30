@@ -7,6 +7,7 @@ import random
 import requests
 from typing import Optional, Dict, List
 from core.config import Config
+from core.freesound_music import FreesoundMusicAPI
 
 class DynamicMusicSelector:
     """Selects music dynamically based on content analysis"""

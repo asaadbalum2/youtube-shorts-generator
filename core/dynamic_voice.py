@@ -7,6 +7,7 @@ import random
 from typing import Dict, Optional
 from gtts import gTTS
 from core.config import Config
+from core.elevenlabs_tts import ElevenLabsTTS
 
 class DynamicVoiceSelector:
     """Selects voice characteristics dynamically based on content analysis"""
