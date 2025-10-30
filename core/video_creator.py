@@ -19,6 +19,7 @@ from core.media_providers import MediaFetcher
 from core.content_analyzer import ContentAnalyzer
 from core.dynamic_music import DynamicMusicSelector
 from core.dynamic_voice import DynamicVoiceSelector
+from core.font_manager import FontManager
 from core.video_rhythm_sync import VideoRhythmSync
 
 class VideoCreator:
