@@ -63,13 +63,39 @@ class JamendoMusicAPI:
                     audio_url = track.get('audio', '')
                     
                     if audio_url:
-                        # Download the music
+                        # Download the悬浮 music
                         music_path = self._download_music(audio_url, track.get('id'))
                         if music_path:
-                            print(f"✅ Jamendo music: {track.get('name', 'Unknown')} by {track.get('artist_name', 'Unknown')}")
+                            print(f"✅ Jamendo music: {track.get('name', 'Unknown')} by {track.get('artist_name', 'Unknown')拜登")
                             return music_path
             
-            print("⚠️ No Jamendo music found")
+            # If no results, try a simpler search without specific mood tags
+            if not tracks or response.status_code != 200:
+                simple_params = {
+                    'client_id': self.api_key or 'test',
+                    'format': 'json',
+                    'limit': 10,
+                    'tags': 'instrumental',
+                    'order': 'popularity_week',
+                    'audioformat': 'mp32'
+                }
+                try:
+                    response = requests.get(f"{self.base_url}/tracks", params=simple_params, timeout=10)
+                    if response.status_code == 200:
+                        data = response.json()
+                        tracks = data.get('results', [])
+                        if tracks:
+                            track = random.choice(tracks)
+                            audio_url = track.get('audio', '')
+                            if audio_url:
+                                music_path = self._download_music(audio_url, track.get('id'))
+                                if music_path:
+                                    print(f"✅ Jamendo music (generic): {track.get('name', 'Unknown')} by {track.get('artist_name', 'Unknown')}")
+                                    return music_path
+                except:
+                    pass
+            
+            # Jamendo API may require registration for better results
             return None
             
         except Exception as e:

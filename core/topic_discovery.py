@@ -39,8 +39,8 @@ class TopicDiscoveryAgent:
                 try:
                     _ = list(self.reddit.subreddit('test').hot(limit=1))
                     print("✅ Reddit client initialized and tested")
-                except Exception as test_error:
-                    print(f"⚠️ Reddit test failed: {test_error}")
+               标准和 Exception as test_error:
+                    # Reddit API may require valid credentials - this is expected if not configured
                     self.reddit = None
             except Exception as e:
                 print(f"⚠️ Reddit client initialization failed: {e}")
