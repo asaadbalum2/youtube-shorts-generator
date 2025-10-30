@@ -170,13 +170,29 @@ Format your response as JSON:
                     json_str_clean += char
                     continue
                 
-                # Inside strings: allow more characters, just remove control chars
+                # Inside strings: escape newlines and preserve valid characters
                 if in_string:
-                    if 32 <= ord(char) <= 126 or char in '\n\r\t':
+                    if char == '\n':
+                        # Escape newlines in strings - JSON requires \n, not actual newline
+                        json_str_clean += '\\n'
+                    elif char == '\r':
+                        # Escape carriage returns
+                        json_str_clean += '\\r'
+                    elif char == '\t':
+                        # Escape tabs
+                        json_str_clean += '\\t'
+                    elif char == '"':
+                        # Escape quotes in strings
+                        json_str_clean += '\\"'
+                    elif 32 <= ord(char) <= 126:
+                        # Printable ASCII - keep as-is
                         json_str_clean += char
+                    elif ord(char) < 32 or (127 <= ord(char) <= 159):
+                        # Control characters - remove
+                        pass  # Skip invalid control chars
                     else:
-                        # Replace non-printable with space
-                        json_str_clean += ' '
+                        # Other characters - keep but might need escaping
+                        json_str_clean += char
                 else:
                     # Outside strings: strict ASCII + whitespace
                     if (32 <= ord(char) <= 126) or char in '\n\r\t':
@@ -184,9 +200,10 @@ Format your response as JSON:
             
             json_str = json_str_clean
             
-            # Step 3: Normalize whitespace outside strings
-            json_str = re.sub(r'[ \t]+', ' ', json_str)  # Multiple spaces to single
-            json_str = re.sub(r'\n\s*\n', '\n', json_str)  # Multiple newlines to single
+            # Step 3: Clean up any remaining issues
+            # Normalize whitespace outside strings (but keep escaped sequences inside strings)
+            # This is tricky - we've already escaped newlines in strings, so now we can safely clean outside
+            json_str = re.sub(r'[ \t]+', ' ', json_str)  # Multiple spaces to single (outside strings)
             
             # Check if JSON string is empty after cleaning
             if not json_str or not json_str.strip():
