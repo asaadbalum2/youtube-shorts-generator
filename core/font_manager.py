@@ -86,8 +86,14 @@ class FontManager:
             # Method 1: GitHub Raw URLs (MOST RELIABLE - always works)
             if font_key in self.FONT_GITHUB_MAP:
                 weight_map = self.FONT_GITHUB_MAP[font_key]
-                # Use exact weight if available, otherwise use closest
-                url = weight_map.get(weight, weight_map.get("700", weight_map.get("400")))
+                # Try exact weight first, then fallback to closest available
+                weight_fallback = [weight, "700", "400"]
+                url = None
+                
+                for w in weight_fallback:
+                    if w in weight_map:
+                        url = weight_map[w]
+                        break
                 
                 if url:
                     try:
@@ -98,10 +104,12 @@ class FontManager:
                             content = response.content
                             if len(content) > 1000:
                                 output_path.write_bytes(content)
-                                print(f"✅ Downloaded font: {font_name} from GitHub (TTF, {len(content)} bytes)")
+                                print(f"✅ Downloaded font: {font_name} (weight: {weight}) from GitHub (TTF, {len(content)} bytes)")
                                 return True
                             else:
                                 print(f"⚠️ GitHub font too small: {len(content)} bytes")
+                        elif response.status_code == 404:
+                            print(f"⚠️ Font URL 404: {url}, trying fallbacks...")
                     except Exception as gh_error:
                         print(f"⚠️ GitHub download failed: {gh_error}")
             
