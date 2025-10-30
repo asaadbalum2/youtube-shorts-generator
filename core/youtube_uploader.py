@@ -199,9 +199,26 @@ class YouTubeUploader:
                     'response': response
                 }
             else:
-                raise Exception("Upload failed after retries")
+                # Check if we got 401 errors consistently - likely token issue
+                raise Exception("Upload failed after retries - likely expired refresh token. Run 'python scripts/regenerate_youtube_token.py' to fix.")
             
         except Exception as e:
+            error_str = str(e).lower()
+            
+            # Check if it's a token expiration issue
+            if any(keyword in error_str for keyword in ['401', 'unauthorized', 'invalid_grant', 'expired', 'token']):
+                print("\n" + "="*70)
+                print("❌ YOUTUBE REFRESH TOKEN EXPIRED OR INVALID")
+                print("="*70)
+                print("\nTo fix this issue:")
+                print("1. In Replit Shell, run: python scripts/regenerate_youtube_token.py")
+                print("2. Follow the prompts to get a new refresh token")
+                print("3. Copy the new refresh token and update YOUTUBE_REFRESH_TOKEN in Replit Secrets")
+                print("4. Restart the app")
+                print("\nThe system will automatically retry uploading pending videos once the token is updated.")
+                print("="*70 + "\n")
+                raise Exception("YouTube refresh token expired. See instructions above.")
+            
             error_msg = f"Error uploading video: {e}"
             print(error_msg)
             

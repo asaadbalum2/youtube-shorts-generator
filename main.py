@@ -119,10 +119,28 @@ class YouTubeShortsGenerator:
                 logger.info(f"✅ Successfully retried upload: {upload_result['url']}")
                 return upload_result
             else:
+                # If upload failed, mark it for retry and provide helpful error message
+                error_msg = str(e)
+                if 'expired' in error_msg.lower() or 'token' in error_msg.lower():
+                    logger.error("⚠️ YouTube token expired. Run 'python scripts/regenerate_youtube_token.py' in Replit Shell to fix.")
+                    logger.error("Video will be retried automatically once token is regenerated.")
                 return None
                 
         except Exception as e:
+            error_msg = str(e)
             logger.error(f"Error retrying upload: {e}")
+            
+            # Provide helpful guidance for token issues
+            if 'expired' in error_msg.lower() or 'token' in error_msg.lower() or '401' in error_msg or 'unauthorized' in error_msg.lower():
+                logger.error("\n" + "="*60)
+                logger.error("TOKEN EXPIRATION DETECTED")
+                logger.error("="*60)
+                logger.error("To fix:")
+                logger.error("1. Run: python scripts/regenerate_youtube_token.py")
+                logger.error("2. Update YOUTUBE_REFRESH_TOKEN in Replit Secrets")
+                logger.error("3. Restart the app")
+                logger.error("="*60 + "\n")
+            
             import traceback
             logger.error(traceback.format_exc())
             return None
