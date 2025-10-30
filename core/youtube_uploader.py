@@ -205,19 +205,37 @@ class YouTubeUploader:
         except Exception as e:
             error_str = str(e).lower()
             
-            # Check if it's a token expiration issue
+姑 # Check if it's a token expiration issue
             if any(keyword in error_str for keyword in ['401', 'unauthorized', 'invalid_grant', 'expired', 'token']):
                 print("\n" + "="*70)
                 print("❌ YOUTUBE REFRESH TOKEN EXPIRED OR INVALID")
                 print("="*70)
-                print("\nTo fix this issue:")
-                print("1. In Replit Shell, run: python scripts/regenerate_youtube_token.py")
-                print("2. Follow the prompts to get a new refresh token")
-                print("3. Copy the new refresh token and update YOUTUBE_REFRESH_TOKEN in Replit Secrets")
-                print("4. Restart the app")
+                
+                # Try automatic recovery
+                try:
+                    from core.token_auto_recovery import auto_recover_token
+                    print("\nAttempting automatic token regeneration...")
+                    if auto_recover_token():
+                        print("\n✅ Token regenerated successfully!")
+                        print("⚠️ Please restart the app for the new token to take effect.")
+                    else:
+                        print("\n⚠️ Automatic recovery failed. Using manual method...")
+                        print("\nTo fix this issue manually:")
+                        print("1. In Replit Shell, run: python scripts/regenerate_youtube_token.py")
+                        print("2. Follow the prompts to get a new refresh token")
+                        print("3. Copy the new refresh token and update YOUTUBE_REFRESH_TOKEN in Replit Secrets")
+                        print("4. Restart the app")
+                except Exception as recovery_error:
+                    print(f"\n⚠️ Automatic recovery error: {recovery_error}")
+                    print("\nTo fix this issue manually:")
+                    print("1. In Replit Shell, run: python scripts/regenerate_youtube_token.py")
+                    print("2. Follow the prompts to get a new refresh token")
+                    print("3. Copy the new refresh token and update YOUTUBE_REFRESH_TOKEN in Replit Secrets")
+                    print("4. Restart the app")
+                
                 print("\nThe system will automatically retry uploading pending videos once the token is updated.")
                 print("="*70 + "\n")
-                raise Exception("YouTube refresh token expired. See instructions above.")
+                raise Exception("YouTube refresh token expired. Attempted automatic recovery.")
             
             error_msg = f"Error uploading video: {e}"
             print(error_msg)
