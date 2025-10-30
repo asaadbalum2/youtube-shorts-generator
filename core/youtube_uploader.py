@@ -10,7 +10,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import pickle
 from typing import Dict, Optional
-from config import Config
+from core.config import Config
 
 # YouTube API scopes
 # YouTube API scopes - need both upload and basic read access

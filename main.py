@@ -9,14 +9,14 @@ from datetime import datetime, date
 from typing import Optional
 import traceback
 
-from config import Config
-from database import Database
-from topic_discovery import TopicDiscoveryAgent
-from content_generator import ContentGenerator
-from video_creator import VideoCreator
-from youtube_uploader import YouTubeUploader
-from scheduler import VideoScheduler
-from email_reporter import EmailReporter
+from core.config import Config
+from core.database import Database
+from core.topic_discovery import TopicDiscoveryAgent
+from core.content_generator import ContentGenerator
+from core.video_creator import VideoCreator
+from core.youtube_uploader import YouTubeUploader
+from core.scheduler import VideoScheduler
+from core.email_reporter import EmailReporter
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -232,7 +232,7 @@ class YouTubeShortsGenerator:
                 logger.error(traceback.format_exc())
                 
                 # Check if it's a recoverable error
-                from error_recovery import ErrorRecovery
+                from core.error_recovery import ErrorRecovery
                 if ErrorRecovery.handle_api_error(upload_error, "YouTube", max_retries=1):
                     logger.info("Attempting automatic recovery...")
                     # Retry upload once after error recovery
@@ -412,7 +412,7 @@ class YouTubeShortsGenerator:
                 
                 # Mount web UI dashboard
                 try:
-                    from web_ui import app as dashboard_app
+                    from web.web_ui import app as dashboard_app
                     # app.mount() is built-in to FastAPI, no import needed
                     app.mount("/dashboard", dashboard_app)
                     logger.info("Web UI dashboard mounted at /dashboard")

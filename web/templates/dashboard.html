@@ -191,16 +191,73 @@
                 <div class="value" id="today-uploaded">{{ today_uploaded }}</div>
             </div>
             <div class="stat-card">
-                <h3>Total Views</h3>
-                <div class="value" id="total-views">{{ total_views }}</div>
+                <h3>Today's Views</h3>
+                <div class="value" id="today-views">{{ today_views }}</div>
             </div>
             <div class="stat-card">
                 <h3>Total Videos</h3>
-                <div class="value" id="total-videos">{{ total_videos }}</div>
+                <div class="value" id="total-videos">{{ overall_stats.total_videos }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Views</h3>
+                <div class="value" id="total-views">{{ overall_stats.total_views }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Likes</h3>
+                <div class="value" id="total-likes">{{ overall_stats.total_likes }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Success Rate</h3>
+                <div class="value" id="success-rate">{{ overall_stats.success_rate }}%</div>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Views/Video</h3>
+                <div class="value" id="avg-views">{{ overall_stats.avg_views }}</div>
             </div>
         </div>
         
-        <div class="actions">
+        {% if most_watched_videos %}
+        <div class="videos-section" style="margin-bottom: 20px;">
+            <h2>🔥 Most Watched Videos</h2>
+            <div class="video-list">
+                {% for video in most_watched_videos %}
+                <div class="video-item">
+                    <h4>{{ video.title }}</h4>
+                    <div class="meta">
+                        Topic: {{ video.topic }} | 
+                        Views: {{ "{:,}".format(video.views) }} | 
+                        Likes: {{ "{:,}".format(video.likes) }} |
+                        Created: {{ video.created_at }}
+                    </div>
+                    {% if video.url %}
+                    <a href="{{ video.url }}" target="_blank">👉 Watch on YouTube</a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if most_watched_topics %}
+        <div class="videos-section" style="margin-bottom: 20px;">
+            <h2>📊 Top Performing Topics</h2>
+            <div class="video-list">
+                {% for topic in most_watched_topics %}
+                <div class="video-item">
+                    <h4>{{ topic.topic }}</h4>
+                    <div class="meta">
+                        Videos: {{ topic.video_count }} | 
+                        Total Views: {{ "{:,}".format(topic.total_views) }} | 
+                        Total Likes: {{ "{:,}".format(topic.total_likes) }} |
+                        Avg Views: {{ "{:,}".format(topic.avg_views) }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="澹actions">
             <h2 style="margin-bottom: 15px;">Actions</h2>
             <button class="btn" onclick="triggerGeneration()">
                 🎬 Generate Video Now

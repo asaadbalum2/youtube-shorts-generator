@@ -5,7 +5,7 @@ Detects token expiration and guides user through fix
 import os
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-from config import Config
+from core.config import Config
 
 def check_token_health():
     """Check if YouTube token is healthy and can be used"""

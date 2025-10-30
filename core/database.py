@@ -5,7 +5,7 @@ import sqlite3
 import json
 from datetime import datetime
 from typing import Optional, Dict, List
-from config import Config
+from core.config import Config
 
 class Database:
     def __init__(self, db_path: str = Config.DATABASE_PATH):
@@ -326,4 +326,106 @@ class Database:
             })
         
         return videos
+    
+    def get_most_watched_videos(self, limit: int = 10) -> List[Dict]:
+        """Get most watched videos"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT video_id, title, topic, youtube_url, views, likes, created_at
+            FROM videos
+            WHERE status = 'uploaded' AND youtube_url IS NOT NULL
+            ORDER BY views DESC
+            LIMIT ?
+        """, (limit,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        videos = []
+        for row in rows:
+            videos.append({
+                'video_id': row[0],
+                'title': row[1],
+                'topic': row[2],
+                'url': row[3],
+                'views': row[4] or 0,
+                'likes': row[5] or 0,
+                'created_at': row[6]
+            })
+        
+        return videos
+    
+    def get_most_watched_topics(self, limit: int = 10) -> List[Dict]:
+        """Get most watched topics (aggregated by topic)"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                topic,
+                COUNT(*) as video_count,
+                SUM(COALESCE(views, 0)) as total_views,
+                SUM(COALESCE(likes, 0)) as total_likes,
+                AVG(COALESCE(views, 0)) as avg_views
+            FROM videos
+            WHERE status = 'uploaded' AND topic IS NOT NULL AND topic != ''
+            GROUP BY topic
+            ORDER BY total_views DESC
+            LIMIT ?
+        """, (limit,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        topics = []
+        for row in rows:
+            topics.append({
+                'topic': row[0],
+                'video_count': row[1],
+                'total_views': row[2] or 0,
+                'total_likes': row[3] or 0,
+                'avg_views': int(row[4] or 0)
+            })
+        
+        return topics
+    
+    def get_overall_stats(self) -> Dict:
+        """Get overall (all-time) statistics"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_videos,
+                SUM(CASE WHEN status='uploaded' THEN 1 ELSE 0 END) as uploaded_videos,
+                SUM(COALESCE(views, 0)) as total_views,
+                SUM(COALESCE(likes, 0)) as total_likes,
+                AVG(COALESCE(views, 0)) as avg_views
+            FROM videos
+        """)
+        
+        row = cursor.fetchone()
+        
+        if row:
+            total_videos, uploaded, total_views, total_likes, avg_views = row
+            return {
+                'total_videos': total_videos or 0,
+                'uploaded_videos': uploaded or 0,
+                'total_views': int(total_views or 0),
+                'total_likes': int(total_likes or 0),
+                'avg_views': int(avg_views or 0),
+                'success_rate': round((uploaded or 0) / max(total_videos or 1, 1) * 100, 1)
+            }
+        
+        conn.close()
+        return {
+            'total_videos': 0,
+            'uploaded_videos': 0,
+            'total_views': 0,
+            'total_likes': 0,
+            'avg_views': 0,
+            'success_rate': 0
+        }
 

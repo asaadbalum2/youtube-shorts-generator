@@ -13,7 +13,7 @@ import numpy as np
 from gtts import gTTS
 import tempfile
 from typing import Dict, Optional
-from config import Config
+from core.config import Config
 
 class VideoCreator:
     def __init__(self):

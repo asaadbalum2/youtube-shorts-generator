@@ -7,8 +7,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, date
 from typing import Dict, List
-from config import Config
-from database import Database
+from core.config import Config
+from core.database import Database
 
 class EmailReporter:
     def __init__(self):

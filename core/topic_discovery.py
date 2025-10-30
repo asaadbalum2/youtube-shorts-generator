@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from groq import Groq
 import json
-from config import Config
+from core.config import Config
 
 class TopicDiscoveryAgent:
     def __init__(self):

@@ -4,7 +4,7 @@ Optimized for YouTube Shorts engagement
 """
 from groq import Groq
 from typing import Dict, Optional
-from config import Config
+from core.config import Config
 import json
 import re
 

@@ -7,7 +7,7 @@ from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, date
 import time
 from typing import Callable
-from config import Config
+from core.config import Config
 
 class VideoScheduler:
     def __init__(self, generation_callback: Callable):
