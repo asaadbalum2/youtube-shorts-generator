@@ -352,10 +352,10 @@ class VideoCreator:
             # Fallback to default font
             text_clip = TextClip(
                 text,
-                fontsize=font_size,
+                fontsize=70,  # Consistent size
                 color='white',
                 stroke_color='black',
-                stroke_width=2,
+                stroke_width=4,  # Thicker outline
                 method='caption',
                 size=(max_width, None),
                 align='center'
