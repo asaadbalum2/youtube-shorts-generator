@@ -44,7 +44,7 @@ Based on research showing viral Shorts have 70-90% higher retention with strong 
    - MANDATORY Format: "First, [FULL POINT NAME WITH DETAILS]. [Why this matters]. Second, [FULL POINT NAME WITH DETAILS]. [Why this matters]. Third, [FULL POINT NAME WITH DETAILS]. [Why this matters]."
    - Example GOOD: "First, microplastics are found in 83% of tap water samples worldwide, meaning most people consume plastic daily. Second, these particles accumulate in human organs, potentially causing inflammation and disease. Third, the average person ingests about 5 grams of plastic per week, equivalent to eating a credit card."
    - Example BAD: "There are three shocking facts about microplastics. First fact. Second fact. Third fact." (THIS IS WRONG - DON'T DO THIS!)
- dips - Each point should be 7-10 seconds when read aloud
+   - Each point should be 7-10 seconds when read aloud
    - Script MUST be 30-35 seconds when read aloud (test it mentally - it should fill the full duration)
    - Match pacing rhythmically: Energetic topics = faster, flowing rhythm | Serious topics = measured, impactful rhythm
    - Use simple language (8th grade level) but with emotional weight
