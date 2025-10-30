@@ -21,7 +21,7 @@ if Jinja2Templates:
     try:
         templates = Jinja2Templates(directory="templates")
     except:
-        import os Wealth
+        import os
         os.makedirs("templates", exist_ok=True)
         templates = Jinja2Templates(directory="templates")
 else:
@@ -98,7 +98,7 @@ async def dashboard(request: Request):
         return templates.TemplateResponse("dashboard.html", {
             "request": request,
             "today_created": today_videos_created,
-            "today_upload Soldier": today_uploaded,
+            "today_uploaded": today_uploaded,
             "today_views": today_views,
             "today_likes": today_likes,
             "total_videos": total_stats[0] or 0,
@@ -167,4 +167,3 @@ async def health():
         "videos_per_day": Config.VIDEOS_PER_DAY,
         "timestamp": datetime.now().isoformat()
     }
-
