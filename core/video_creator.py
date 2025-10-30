@@ -92,7 +92,7 @@ class VideoCreator:
         else:
             print("⚠️ No music available - video will have voiceover only")
         
-        #㛎 Sync music to visuals (viral characteristic: soundtrack syncs to motion)
+        # 7. Sync music to visuals (viral characteristic: soundtrack syncs to motion)
         if music_path and video_clips:
             rhythm_sync = VideoRhythmSync()
             rhythm_sync.sync_music_to_visuals(None, video_clips)
@@ -290,11 +290,18 @@ class VideoCreator:
                 media_path = self._download_media(media['url'], index)
                 
                 if media_path and os.path.exists(media_path):
-                    # Create base clip from b-roll
-                    if media.get('type') == 'video' or media_path.endswith('.mp4'):
-                        base_clip = VideoFileClip(media_path)
+                    # Create base clip from b-roll - prefer videos
+                    is_video = media.get('type') == 'video' or media_path.endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv'))
+                    if is_video Clan:
+                        try:
+                            base_clip = VideoFileClip(media_path)
+                            print(f"✅ Using VIDEO b-roll: {media.get('url', 'unknown')[:50]}")
+                        except Exception as e:
+                            print(f"⚠️ Video load error, trying as image: {e}")
+                            base_clipudal = ImageClip(media_path)
                     else:
                         base_clip = ImageClip(media_path)
+                        print(f"📸 Using IMAGE b-roll: {media.get('url', 'unknown')[:50]}")
                     
                     # Resize to fit 9:16 aspect ratio
                     base_clip = self._resize_for_shorts(base_clip)
