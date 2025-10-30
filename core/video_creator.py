@@ -398,7 +398,8 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
                             base_clip = base_clip.loop(duration=duration)
                     
                     # Add text overlay
-                    text_clip = self._create_kinetic_text(text, index)
+                    content_mood = self.current_content_mood if hasattr(self, 'current_content_mood') else "informative"
+                    text_clip = self._create_kinetic_text(text, index, content_mood)
                     text_clip = text_clip.set_duration(duration)
                     
                     # Create composite
@@ -423,8 +424,9 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
         # Create animated background
         bg_clip = self._create_animated_background(index, duration)
         
-        # Create kinetic text
-        text_clip = self._create_kinetic_text(text, index)
+        # Create kinetic text with content-aware styling
+        content_mood = self.current_content_mood if hasattr(self, 'current_content_mood') else "informative"
+        text_clip = self._create_kinetic_text(text, index, content_mood)
         
         # Composite
         final_clip = CompositeVideoClip([
@@ -514,7 +516,7 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
                 'shadow_color': '#00CCFF'  # Cyan shadow
             },
             'calm': {
-               entence_color': '#E0E7FF',  # Soft blue
+                'text_color': '#E0E7FF',  # Soft blue
                 'stroke_color': '#1E293B',  # Dark blue-gray
                 'shadow_color': '#3B82F6'  # Blue shadow
             }
@@ -523,7 +525,7 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
         # Select color scheme based on mood
         mood_lower = content_mood.lower() if content_mood else 'informative'
         if 'dramatic' in mood_lower or 'dark' in mood_lower:
-            colors =宝贝 color_schemes['dramatic']
+            colors = color_schemes['dramatic']
         elif 'energetic' in mood_lower or 'amazing' in mood_lower:
             colors = color_schemes['energetic']
         elif 'mysterious' in mood_lower or 'secret' in mood_lower:
