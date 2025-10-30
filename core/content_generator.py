@@ -117,61 +117,57 @@ Format your response as JSON:
                 print("⚠️ Content generator: Empty response from AI, using fallback")
                 return self._generate_fallback_content(topic)
             
-            # Clean invalid control characters MORE AGGRESSIVELY
-            # Remove ALL control characters and non-printable characters
-            content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
-            # Only keep printable characters and newlines/tabs
-            content = ''.join(char for char in content if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
-            # Remove invalid escape sequences
-            content = content.encode('utf-8', errors='ignore').decode('utf-8')
-            
-            # Check again after cleaning - if empty, use fallback
-            if not content or not content.strip():
-                print("⚠️ Content generator: Content empty after cleaning, using fallback")
+            # EXTRACT JSON FIRST - don't parse the whole response
+            # Find JSON object and extract it BEFORE cleaning
+            start_idx = content.find('{')
+            if start_idx == -1:
+                print("⚠️ Content generator: No JSON object found, using fallback")
                 return self._generate_fallback_content(topic)
             
-            # Try parsing with retry if it fails
+            # Find matching closing brace
+            bracket_count = 0
+            end_idx = start_idx
+            for i in range(start_idx, len(content)):
+                if content[i] == '{':
+                    bracket_count += 1
+                elif content[i] == '}':
+                    bracket_count -= 1
+                    if bracket_count == 0:
+                        end_idx = i + 1
+                        break
+            
+            if end_idx <= start_idx:
+                print("⚠️ Content generator: Invalid JSON structure, using fallback")
+                return self._generate_fallback_content(topic)
+            
+            # Extract JSON string
+            json_str = content[start_idx:end_idx]
+            
+            # Clean invalid control characters from extracted JSON
+            json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
+            json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+            json_str = json_str.encode('utf-8', errors='ignore').decode('utf-8')
+            
+            # Check if JSON string is empty after cleaning
+            if not json_str or not json_str.strip():
+                print("⚠️ Content generator: JSON empty after extraction/cleaning, using fallback")
+                return self._generate_fallback_content(topic)
+            
+            # Try parsing the cleaned JSON
             try:
-                video_content = json.loads(content)
+                video_content = json.loads(json_str)
+                print(f"✅ JSON parsed successfully")
             except json.JSONDecodeError as e:
                 print(f"⚠️ JSON parse error: {e}")
-                print(f"⚠️ Raw content (first 300 chars): {content[:300]}")
-                
-                # Try to extract JSON if it's wrapped in text
-                # Find first { and matching }
-                start_idx = content.find('{')
-                if start_idx != -1:
-                    bracket_count = 0
-                    end_idx = start_idx
-                    for i in range(start_idx, len(content)):
-                        if content[i] == '{':
-                            bracket_count += 1
-                        elif content[i] == '}':
-                            bracket_count -= 1
-                            if bracket_count == 0:
-                                end_idx = i + 1
-                                break
-                    
-                    if end_idx > start_idx:
-                        json_str = content[start_idx:end_idx]
-                        try:
-                            # Clean extracted JSON MORE AGGRESSIVELY
-                            # Remove ALL control characters
-                            json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
-                            # Also remove any non-printable characters
-                            json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
-                            # Remove invalid escape sequences
-                            json_str = json_str.encode('utf-8', errors='ignore').decode('utf-8')
-                            video_content = json.loads(json_str)
-                            print(f"✅ JSON extracted successfully from wrapped text")
-                        except Exception as extract_error:
-                            print(f"⚠️ Failed to parse extracted JSON: {extract_error}")
-                            print(f"⚠️ Extracted JSON (first 500 chars): {json_str[:500]}")
-                            # Use fallback
-                            return self._generate_fallback_content(topic)
-                else:
-                    # No JSON found, use fallback
-                    print("⚠️ No JSON object found in response, using fallback")
+                print(f"⚠️ JSON content (first 300 chars): {json_str[:300]}")
+                # Last resort: try one more time with raw extraction
+                try:
+                    # Try direct parse of original content from first {
+                    raw_json = content[content.find('{'):]
+                    video_content = json.loads(raw_json)
+                    print(f"✅ JSON parsed (direct extraction)")
+                except:
+                    print("⚠️ All JSON parsing attempts failed, using fallback")
                     return self._generate_fallback_content(topic)
             
             # Ensure hashtags are in description

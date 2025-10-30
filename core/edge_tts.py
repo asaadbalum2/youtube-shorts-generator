@@ -62,29 +62,48 @@ class EdgeTTS:
                 # Use a temporary file first to check if audio was generated
                 temp_output = output_path + '.tmp'
                 
-                # Edge TTS requires proper async streaming - use stream() to collect all chunks
+                # Edge TTS - try both stream() and save() methods
+                # Method 1: Try stream() first for better control
                 audio_chunks = []
+                chunks_received = False
                 
-                # Stream all audio chunks
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        audio_chunks.append(chunk["data"])
-                
-                # Combine all chunks
-                if audio_chunks:
-                    audio_data = b"".join(audio_chunks)
+                try:
+                    # Stream all audio chunks
+                    async for chunk in communicate.stream():
+                        if chunk["type"] == "audio":
+                            audio_chunks.append(chunk["data"])
+                            chunks_received = True
                     
-                    # Verify we got audio data
-                    if audio_data and len(audio_data) > 1000:  # At least 1KB
-                        with open(temp_output, "wb") as f:
-                            f.write(audio_data)
-                        print(f"🔍 Audio data collected: {len(audio_data)} bytes from {len(audio_chunks)} chunks")
+                    # If we got chunks, combine them
+                    if audio_chunks and chunks_received:
+                        audio_data = b"".join(audio_chunks)
+                        
+                        # Verify we got audio data
+                        if audio_data and len(audio_data) > 1000:  # At least 1KB
+                            with open(temp_output, "wb") as f:
+                                f.write(audio_data)
+                            print(f"✅ Edge TTS: Audio collected via stream: {len(audio_data)} bytes from {len(audio_chunks)} chunks")
+                        else:
+                            raise Exception(f"Audio data too small: {len(audio_data) if audio_data else 0} bytes")
                     else:
-                        print(f"⚠️ Edge TTS: Audio data too small ({len(audio_data) if audio_data else 0} bytes)")
-                        raise Exception(f"No audio data received: {len(audio_data) if audio_data else 0} bytes")
-                else:
-                    print(f"⚠️ Edge TTS: No audio chunks received")
-                    raise Exception("No audio chunks received from Edge TTS stream")
+                        raise Exception("No audio chunks in stream")
+                        
+                except Exception as stream_error:
+                    print(f"⚠️ Edge TTS stream() failed: {stream_error}, trying save() method...")
+                    # Method 2: Fallback to save() method
+                    try:
+                        # Recreate communicate object for save()
+                        communicate2 = edge_tts.Communicate(text_clean, voice_to_use)
+                        await communicate2.save(temp_output)
+                        
+                        # Verify file was created
+                        if os.path.exists(temp_output) and os.path.getsize(temp_output) > 1000:
+                            print(f"✅ Edge TTS: Audio saved via save() method: {os.path.getsize(temp_output)} bytes")
+                        else:
+                            raise Exception(f"save() created file but too small: {os.path.getsize(temp_output) if os.path.exists(temp_output) else 0} bytes")
+                    except Exception as save_error:
+                        print(f"⚠️ Edge TTS save() also failed: {save_error}")
+                        raise Exception(f"Both stream() and save() failed: {save_error}")
                 
                 print(f"🔍 Temp file created: exists={os.path.exists(temp_output)}, size={os.path.getsize(temp_output) if os.path.exists(temp_output) else 0}")
                 

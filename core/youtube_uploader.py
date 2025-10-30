@@ -107,12 +107,16 @@ class YouTubeUploader:
         self.quota_manager.log_quota_usage("upload_attempt", self.quota_manager.upload_cost)
         
         try:
-            # Prepare metadata
+            # Prepare metadata - handle None values
+            safe_title = (title or "Untitled Video")[:100]
+            safe_description = (description or "")[:5000] if description else ""
+            safe_tags = (tags or [])[:10] if tags else []
+            
             body = {
                 'snippet': {
-                    'title': title[:100],  # YouTube title limit
-                    'description': description[:5000],  # YouTube description limit
-                    'tags': tags[:10],  # Max 10 tags
+                    'title': safe_title,
+                    'description': safe_description,
+                    'tags': safe_tags,
                     'categoryId': category_id
                 },
                 'status': {
