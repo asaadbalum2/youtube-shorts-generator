@@ -143,19 +143,50 @@ Format your response as JSON:
             # Extract JSON string
             json_str = content[start_idx:end_idx]
             
-            # Clean invalid control characters from extracted JSON - MORE AGGRESSIVE
-            # Remove ALL control characters except newlines, tabs, carriage returns
+            # Clean invalid control characters from extracted JSON - ULTRA AGGRESSIVE
+            # Step 1: Remove ALL control characters (0x00-0x1F, 0x7F-0x9F) except \n, \r, \t
             json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
-            # Only keep printable ASCII + essential whitespace
-            json_str = ''.join(char for char in json_str if (32 <= ord(char) <= 126) or char in '\n\r\t')
-            # Remove any remaining non-ASCII except in string values
-            # This is tricky - we want to keep valid Unicode in string values but remove control chars
-            # For now, use UTF-8 encoding/decoding to normalize
-            try:
-                json_str = json_str.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
-            except:
-                # If encoding fails, use strict ASCII
-                json_str = json_str.encode('ascii', errors='ignore').decode('ascii')
+            
+            # Step 2: Remove any character that's not printable ASCII (32-126) or whitespace
+            # But we need to preserve string content inside quotes, so do this carefully
+            # First, replace control chars in string values with space
+            json_str_clean = ""
+            in_string = False
+            escape_next = False
+            
+            for i, char in enumerate(json_str):
+                if escape_next:
+                    json_str_clean += char
+                    escape_next = False
+                    continue
+                
+                if char == '\\':
+                    json_str_clean += char
+                    escape_next = True
+                    continue
+                
+                if char == '"':
+                    in_string = not in_string
+                    json_str_clean += char
+                    continue
+                
+                # Inside strings: allow more characters, just remove control chars
+                if in_string:
+                    if 32 <= ord(char) <= 126 or char in '\n\r\t':
+                        json_str_clean += char
+                    else:
+                        # Replace non-printable with space
+                        json_str_clean += ' '
+                else:
+                    # Outside strings: strict ASCII + whitespace
+                    if (32 <= ord(char) <= 126) or char in '\n\r\t':
+                        json_str_clean += char
+            
+            json_str = json_str_clean
+            
+            # Step 3: Normalize whitespace outside strings
+            json_str = re.sub(r'[ \t]+', ' ', json_str)  # Multiple spaces to single
+            json_str = re.sub(r'\n\s*\n', '\n', json_str)  # Multiple newlines to single
             
             # Check if JSON string is empty after cleaning
             if not json_str or not json_str.strip():
