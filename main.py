@@ -17,6 +17,8 @@ from video_creator import VideoCreator
 from youtube_uploader import YouTubeUploader
 from scheduler import VideoScheduler
 from email_reporter import EmailReporter
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 # Setup logging
 logging.basicConfig(
@@ -174,7 +176,7 @@ class YouTubeShortsGenerator:
             
             return None
     
-    def start_autonomous_mode(self):
+    def start_autonomous_mode(self, start_web_server=True):
         """Start fully autonomous operation with scheduled generation"""
         logger.info("Starting autonomous mode...")
         
@@ -194,6 +196,62 @@ class YouTubeShortsGenerator:
         report_scheduler.start()
         
         logger.info("Autonomous mode active - system will run continuously")
+        
+        # Start web server for manual triggers (if requested)
+        if start_web_server:
+            try:
+                app = FastAPI(title="YouTube Shorts Generator API")
+                
+                @app.get("/")
+                def root():
+                    return {
+                        "status": "YouTube Shorts Generator is running",
+                        "videos_per_day": Config.VIDEOS_PER_DAY,
+                        "endpoints": {
+                            "generate": "POST /generate - Trigger manual video generation",
+                            "health": "GET /health - Check system health"
+                        }
+                    }
+                
+                @app.post("/generate")
+                def trigger_generation():
+                    """Manual trigger to generate one video now (for testing)"""
+                    try:
+                        logger.info("Manual video generation triggered via API")
+                        result = self.generate_and_upload_video()
+                        if result:
+                            return {
+                                "status": "success",
+                                "message": "Video generated and uploaded",
+                                "video_url": result.get('url'),
+                                "video_id": result.get('video_id'),
+                                "title": result.get('title')
+                            }
+                        else:
+                            return {"status": "failed", "message": "Video generation failed - check logs"}
+                    except Exception as e:
+                        logger.error(f"Manual generation error: {e}")
+                        return {"status": "error", "message": str(e)}
+                
+                @app.get("/health")
+                def health():
+                    return {
+                        "status": "healthy",
+                        "scheduler_running": self.scheduler is not None,
+                        "videos_per_day": Config.VIDEOS_PER_DAY
+                    }
+                
+                # Start FastAPI server in background thread
+                import threading
+                def run_server():
+                    import uvicorn
+                    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")
+                
+                server_thread = threading.Thread(target=run_server, daemon=True)
+                server_thread.start()
+                logger.info("Web server started on port 8080 - use POST /generate to trigger manual video")
+            except Exception as e:
+                logger.warning(f"Could not start web server (this is optional): {e}")
         
         # Keep script running
         try:

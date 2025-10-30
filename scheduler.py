@@ -22,29 +22,40 @@ class VideoScheduler:
         self.videos_per_day = Config.VIDEOS_PER_DAY
     
     def start(self):
-        """Start the scheduler"""
-        # Calculate intervals - spread videos throughout the day
-        hours_per_video = 24 / self.videos_per_day
+        """Start the scheduler with randomized posting times (prevents YouTube spam detection)"""
+        import random
         
-        # Schedule videos at optimal times (when engagement is high)
-        # Based on research: 2-4pm, 8-11pm EST are peak times
-        optimal_hours = [14, 16, 20, 22]  # 2pm, 4pm, 8pm, 10pm
+        # Optimal hour ranges for engagement - randomized within these windows
+        # This prevents YouTube from detecting patterns
+        optimal_hour_ranges = [
+            (13, 15),  # 1pm-3pm (afternoon)
+            (15, 17),  # 3pm-5pm (afternoon) 
+            (19, 21),  # 7pm-9pm (evening)
+            (20, 22),  # 8pm-10pm (evening)
+        ]
         
         for i in range(self.videos_per_day):
-            hour = optimal_hours[i % len(optimal_hours)]
+            # Pick random time within optimal ranges
+            hour_range = optimal_hour_ranges[i % len(optimal_hour_ranges)]
             
-            # Schedule daily at this hour
+            # Randomize hour within range
+            hour = random.randint(hour_range[0], hour_range[1])
+            
+            # Randomize minute (0-59) for more variation - prevents pattern detection
+            minute = random.randint(0, 59)
+            
+            # Schedule daily at this randomized time
             self.scheduler.add_job(
                 func=self._generate_video,
-                trigger=CronTrigger(hour=hour, minute=0),
+                trigger=CronTrigger(hour=hour, minute=minute),
                 id=f'video_generation_{i}',
                 replace_existing=True
             )
             
-            print(f"Scheduled video generation #{i+1} at {hour:02d}:00 daily")
+            print(f"Scheduled video generation #{i+1} at {hour:02d}:{minute:02d} daily (randomized to prevent spam detection)")
         
         self.scheduler.start()
-        print("Scheduler started - videos will be generated automatically")
+        print("Scheduler started - videos will be generated automatically at randomized times")
     
     def _generate_video(self):
         """Wrapper to call generation callback"""
