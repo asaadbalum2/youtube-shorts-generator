@@ -85,19 +85,17 @@ Based on research showing viral Shorts have 70-90% higher retention with strong 
    - Include trending variations if possible
    - Cover different search intents
 
-Format your response as JSON:
-{{
-    "script": "Full script text here...",
-    "title": "Title here",
-    "description": "Description with hashtags",
-    "tags": ["tag1", "tag2", ...]
-}}"""
+CRITICAL: Return ONLY raw JSON (no markdown, no code blocks, no text before/after).
+Use \\n for newlines inside strings, NOT actual line breaks.
+
+Format (raw JSON only):
+{{"script":"Full script text here... use \\n for line breaks","title":"Title here","description":"Description with hashtags","tags":["tag1","tag2"]}}"""
 
         try:
             response = self.groq_client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": "You are a YouTube Shorts content expert specializing in viral videos. Your scripts are backed by statistical analysis showing what makes content go viral."},
+                    {"role": "system", "content": "You are a YouTube Shorts content expert. ALWAYS return ONLY valid JSON format with NO markdown, NO code blocks, NO explanations. JSON strings must use \\n for newlines, NOT actual newlines."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.8,

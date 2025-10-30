@@ -1,12 +1,11 @@
 """
 Font Manager - Downloads and manages Google Fonts for video creation
-Uses Google Fonts API to get high-quality, modern fonts in TTF format
+Uses GitHub CDN directly (most reliable) + Google Fonts API as fallback
 """
 import os
 import requests
 from typing import Optional, List
 from pathlib import Path
-import json
 
 
 class FontManager:
@@ -24,11 +23,38 @@ class FontManager:
         "Raleway",         # Elegant, modern
     ]
     
+    # GitHub raw URLs for Google Fonts (RELIABLE, always works)
+    FONT_GITHUB_MAP = {
+        "bebas neue": {
+            "400": "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf",
+            "700": "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf",  # Bebas Neue only has one weight
+            "900": "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf",
+        },
+        "montserrat": {
+            "400": "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Regular.ttf",
+            "700": "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Bold.ttf",
+            "900": "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Black.ttf",
+        },
+        "poppins": {
+            "400": "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Regular.ttf",
+            "700": "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf",
+            "900": "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Black.ttf",
+        },
+        "roboto": {
+            "400": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Regular.ttf",
+            "700": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Bold.ttf",
+            "900": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Black.ttf",
+        },
+        "inter": {
+            "400": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Regular.ttf",
+            "700": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Bold.ttf",
+            "900": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Black.ttf",
+        },
+    }
+    
     def __init__(self):
         self.fonts_dir = Path("./assets/fonts")
         self.fonts_dir.mkdir(parents=True, exist_ok=True)
-        # Google Fonts API key (public, works without auth)
-        self.api_key = "AIzaSyD_HTfk2Jm1QWO7hMZYMDN8FjV5x0q1vWo"
     
     def get_font_path(self, font_name: str = None, weight: str = "700") -> str:
         """
@@ -53,17 +79,41 @@ class FontManager:
         return str(font_path) if font_path.exists() else self._get_system_font()
     
     def _download_google_font(self, font_name: str, weight: str, output_path: Path) -> bool:
-        """Download font from Google Fonts using API method"""
+        """Download font from GitHub (most reliable) or Google Fonts"""
         try:
-            # Method 1: Use Google Fonts API v1 to get font metadata
-            api_url = f"https://www.googleapis.com/webfonts/v1/webfonts?key={self.api_key}"
+            font_key = font_name.lower()
             
+            # Method 1: GitHub Raw URLs (MOST RELIABLE - always works)
+            if font_key in self.FONT_GITHUB_MAP:
+                weight_map = self.FONT_GITHUB_MAP[font_key]
+                # Use exact weight if available, otherwise use closest
+                url = weight_map.get(weight, weight_map.get("700", weight_map.get("400")))
+                
+                if url:
+                    try:
+                        headers = {'User-Agent': 'Mozilla/5.0'}
+                        response = requests.get(url, timeout=30, headers=headers, allow_redirects=True)
+                        
+                        if response.status_code == 200:
+                            content = response.content
+                            if len(content) > 1000:
+                                output_path.write_bytes(content)
+                                print(f"✅ Downloaded font: {font_name} from GitHub (TTF, {len(content)} bytes)")
+                                return True
+                            else:
+                                print(f"⚠️ GitHub font too small: {len(content)} bytes")
+                    except Exception as gh_error:
+                        print(f"⚠️ GitHub download failed: {gh_error}")
+            
+            # Method 2: Google Fonts API v1
             try:
+                api_key = "AIzaSyD_HTfk2Jm1QWO7hMZYMDN8FjV5x0q1vWo"
+                api_url = f"https://www.googleapis.com/webfonts/v1/webfonts?key={api_key}"
+                
                 api_response = requests.get(api_url, timeout=10)
                 if api_response.status_code == 200:
                     fonts_data = api_response.json()
                     
-                    # Find our font
                     font_info = None
                     for f in fonts_data.get('items', []):
                         if f['family'].lower() == font_name.lower():
@@ -71,19 +121,10 @@ class FontManager:
                             break
                     
                     if font_info:
-                        # Map weight to variant name
-                        weight_to_variant = {
-                            "400": "regular",
-                            "600": "600", 
-                            "700": "700",
-                            "900": "900"
-                        }
+                        weight_to_variant = {"400": "regular", "600": "600", "700": "700", "900": "900"}
                         variant = weight_to_variant.get(weight, "regular")
                         
-                        # Get TTF file URL from files dictionary
                         files = font_info.get('files', {})
-                        
-                        # Try different variant names
                         variant_names = [variant, weight, f"{weight}regular", f"{variant}regular"]
                         ttf_url = None
                         
@@ -92,68 +133,35 @@ class FontManager:
                                 ttf_url = files[v]
                                 break
                         
-                        # If still no URL, use first available variant
                         if not ttf_url and files:
                             ttf_url = list(files.values())[0]
                         
                         if ttf_url:
-                            # Download TTF file
-                            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                            headers = {'User-Agent': 'Mozilla/5.0'}
                             font_response = requests.get(ttf_url, timeout=30, headers=headers)
                             
-                            if font_response.status_code == 200:
-                                content = font_response.content
-                                if len(content) > 1000:
-                                    output_path.write_bytes(content)
-                                    print(f"✅ Downloaded font: {font_name} (TTF, {len(content)} bytes)")
-                                    return True
-                                else:
-                                    print(f"⚠️ Font file too small: {len(content)} bytes")
+                            if font_response.status_code == 200 and len(font_response.content) > 1000:
+                                output_path.write_bytes(font_response.content)
+                                print(f"✅ Downloaded font: {font_name} from Google Fonts API (TTF)")
+                                return True
             except Exception as api_error:
                 print(f"⚠️ API method failed: {api_error}")
             
-            # Method 2: Direct download from Google Fonts CDN using standard URL pattern
-            # Google Fonts CDN pattern: https://fonts.gstatic.com/s/fontname/vXX/fontfile.ttf
-            # We need to construct the URL based on font name
-            font_id = font_name.lower().replace(" ", "").replace("-", "")
-            
-            # Common Google Fonts version patterns
-            # Try to download using known patterns
-            direct_urls = [
-                f"https://fonts.gstatic.com/s/{font_id.lower()}/v18/{font_id.lower()}-{weight}.ttf",
-                f"https://fonts.gstatic.com/s/{font_id.lower()}/v19/{font_id.lower()}-{weight}.ttf",
-                f"https://fonts.gstatic.com/s/{font_id.lower()}/v20/{font_id.lower()}-{weight}.ttf",
+            # Method 3: Try GitHub generic path (for fonts not in our map)
+            font_id = font_name.lower().replace(" ", "")
+            github_urls = [
+                f"https://github.com/google/fonts/raw/main/ofl/{font_id}/{font_id.capitalize()}-{weight}.ttf",
+                f"https://github.com/google/fonts/raw/main/ofl/{font_id}/{font_name.replace(' ', '')}-{weight}.ttf",
+                f"https://github.com/google/fonts/raw/main/ofl/{font_id}/{font_name.replace(' ', '')}-Regular.ttf",
             ]
             
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            for url in direct_urls:
-                try:
-                    response = requests.get(url, timeout=15, headers=headers)
-                    if response.status_code == 200 and len(response.content) > 1000:
-                        # Verify it's a TTF file
-                        content = response.content
-                        if content[:4] in [b'\x00\x01\x00\x00', b'OTTO', b'ttcf'] or content[:2] == b'\x00\x01':
-                            output_path.write_bytes(content)
-                            print(f"✅ Downloaded font: {font_name} (direct CDN, {len(content)} bytes)")
-                            return True
-                except:
-                    continue
-            
-            # Method 4: Try jsDelivr CDN for Google Fonts (backup)
-            # jsDelivr mirrors Google Fonts
-            font_id = font_name.lower().replace(" ", "-")
-            jsdelivr_urls = [
-                f"https://cdn.jsdelivr.net/npm/@fontsource/{font_id}/{weight}.ttf",
-                f"https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/{font_id}/{font_id.capitalize()}-{weight}.ttf",
-            ]
-            
-            for url in jsdelivr_urls:
+            for url in github_urls:
                 try:
                     headers = {'User-Agent': 'Mozilla/5.0'}
-                    response = requests.get(url, timeout=15, headers=headers)
+                    response = requests.get(url, timeout=15, headers=headers, allow_redirects=True)
                     if response.status_code == 200 and len(response.content) > 1000:
                         output_path.write_bytes(response.content)
-                        print(f"✅ Downloaded font: {font_name} (jsDelivr CDN)")
+                        print(f"✅ Downloaded font: {font_name} from GitHub (generic, {len(response.content)} bytes)")
                         return True
                 except:
                     continue
