@@ -368,7 +368,7 @@
                         {% else %}
                         <span style="color: #999;">Processing...</span>
                         {% if video.video_file_path %}
-                        <br><button onclick="downloadVideo('{{ video.video_id }}', '{{ video.title }}')" 
+                        <br><button onclick="downloadVideo({{ video.video_id|tojson }}, {{ video.title|tojson }})" 
                                 style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">
                             📥 Download Video
                         </button>
