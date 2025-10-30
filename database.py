@@ -42,6 +42,27 @@ class Database:
             )
         """)
         
+        # Migration: Add new columns if they don't exist (for existing databases)
+        try:
+            cursor.execute("ALTER TABLE videos ADD COLUMN video_file_path TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            cursor.execute("ALTER TABLE videos ADD COLUMN upload_error TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            cursor.execute("ALTER TABLE videos ADD COLUMN retry_count INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            cursor.execute("ALTER TABLE videos ADD COLUMN last_retry_at TIMESTAMP")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
         # Trends table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS trends (
