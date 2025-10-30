@@ -257,7 +257,9 @@ class YouTubeShortsGenerator:
                 import threading
                 def run_server():
                     import uvicorn
-                    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")
+                    # Use port from env or default to 8080 (Replit uses PORT env var)
+                    port = int(os.getenv("PORT", 8080))
+                    uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
                 
                 server_thread = threading.Thread(target=run_server, daemon=True)
                 server_thread.start()

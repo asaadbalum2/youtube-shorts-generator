@@ -28,3 +28,11 @@ args = "python main.py autonomous"
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+# Web service configuration - expose port 8080
+[deploy]
+run = ["python", "main.py", "autonomous"]
+
+# Expose the web service
+[env]
+PORT = "8080"
