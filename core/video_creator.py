@@ -140,7 +140,8 @@ class VideoCreator:
         if result:
             return result
         
-        # Fallback to gTTS
+        # Fallback to gTTS (forced American accent in dynamic_voice.py)
+        print("⚠️ Using gTTS fallback - for better quality add ELEVENLABS_API_KEY")
         return self.voice_selector.generate_speech(script, analysis, audio_path)
     
     def _fetch_broll_media(self, topic: str, duration: float, num_segments: int = 0) -> List[Dict]:
