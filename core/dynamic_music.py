@@ -53,9 +53,17 @@ class DynamicMusicSelector:
         youtube_audio = YouTubeAudioLibrary()
         yt_music = youtube_audio.get_music(mood, music_style, duration)
         if yt_music:
+            print(f"✅ Using YouTube Audio Library music (copyright-safe, YouTube recognizes it)")
             return yt_music
         
-        # Third, try local music files
+        # SECOND: Jamendo API (free, trending/popular tracks) - as backup
+        jamendo = JamendoMusicAPI()
+        jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=[music_style, mood])
+        if jamendo_music:
+            print(f"✅ Using Jamendo music (free tier, trending tracks)")
+            return jamendo_music
+        
+        # THIRD: Local music files
         local_music = self._get_local_music(music_style, mood, tempo)
         if local_music:
             return local_music
