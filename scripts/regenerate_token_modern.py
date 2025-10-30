@@ -105,7 +105,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
             """.encode())
         else:
             self.send_response(400)
-            self.send_header('Content-type', ''Brien/html')
+            self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write(b"Invalid request")
     
