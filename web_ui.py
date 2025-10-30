@@ -31,10 +31,12 @@ else:
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     """Main dashboard"""
-    if not templates:
-        return HTMLResponse("<h1>Dashboard</h1><p>Jinja2 templates not available. Install: pip install jinja2</p>")
-    # Get stats from database
-    db = sqlite3.connect(Config.DATABASE_PATH)
+    try:
+        if not templates:
+            return HTMLResponse("<h1>Dashboard</h1><p>Jinja2 templates not available. Install: pip install jinja2</p>")
+        
+        # Get stats from database
+        db = sqlite3.connect(Config.DATABASE_PATH)
     cursor = db.cursor()
     
     # Today's stats
@@ -97,6 +99,19 @@ async def dashboard(request: Request):
         "recent_videos": videos,
         "videos_per_day": Config.VIDEOS_PER_DAY
     })
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        return HTMLResponse(f"""
+            <html><body style="font-family: Arial; padding: 20px;">
+                <h1>Dashboard Error</h1>
+                <p><strong>Error:</strong> {str(e)}</p>
+                <details>
+                    <summary>Full traceback (click to expand)</summary>
+                    <pre style="background: #f5f5f5; padding: 10px; overflow: auto;">{error_details}</pre>
+                </details>
+            </body></html>
+        """)
 
 @app.post("/api/generate")
 async def trigger_generation():
