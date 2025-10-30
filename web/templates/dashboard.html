@@ -332,8 +332,11 @@
             <button class="btn" onclick="testGroq()" style="margin-left: 10px; background: #28a745; color: #fff;">
                 🤖 Test Groq
             </button>
-            <button class="btn" onclick="console.log('🧪 Button clicked!'); alert('Button works!');" style="margin-left: 10px; background: #6c757d; color: #fff;">
+            <button class="btn" onclick="console.log('🧪 Test button clicked!'); alert('Test button works!');" style="margin-left: 10px; background: #6c757d; color: #fff;">
                 🧪 Test Button
+            </button>
+            <button class="btn" onclick="console.log('🔧 Refresh token button clicked!'); testToken();" style="margin-left: 10px; background: #dc3545; color: #fff;">
+                🔧 Debug Test Token
             </button>
             <button class="btn" onclick="testReddit()" style="margin-left: 10px; background: #ff6b35; color: #fff;">
                 🔴 Test Reddit
@@ -385,6 +388,15 @@
     </div>
     
     <script>
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            console.error('🔧 JavaScript Error:', e.error);
+            console.error('🔧 Error details:', e.filename, e.lineno, e.colno);
+        });
+        
+        // Test basic functionality
+        console.log('🔧 Script starting...');
+        
         async function triggerGeneration() {
             const btn = event.target;
             const loading = document.getElementById('loading');
@@ -614,8 +626,19 @@
             testToken: typeof testToken,
             testGroq: typeof testGroq,
             testReddit: typeof testReddit,
-            downloadVideo: typeof downloadVideo
+            downloadVideo: typeof downloadVideo,
+            refreshToken: typeof refreshToken
         });
+        
+        // Test if basic JavaScript works
+        console.log('🔧 Basic JavaScript test: 2 + 2 =', 2 + 2);
+        
+        // Test if we can make a simple fetch request
+        console.log('🔧 Testing basic fetch...');
+        fetch('/api/health')
+            .then(response => response.json())
+            .then(data => console.log('🔧 Health check response:', data))
+            .catch(error => console.error('🔧 Health check error:', error));
         
         // Auto-refresh stats every 30 seconds
         setInterval(refreshStats, 30000);
