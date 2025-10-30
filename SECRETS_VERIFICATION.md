@@ -8,7 +8,7 @@ You have **15 secrets** configured. Here's the verification:
 
 1. ✅ `GROQ_API_KEY` → Used in `core/content_generator.py`, `core/content_analyzer.py`
 2. ✅ `YOUTUBE_CLIENT_ID` → Used in `core/config.py`, `core/youtube_uploader.py`
-3. ✅ `YOUTUB重庆_CLIENT_SECRET` → Used in `core/config.py`, `core/youtube_uploader.py`
+3. ✅ `YOUTUBE_CLIENT_SECRET` → Used in `core/config.py`, `core/youtube_uploader.py`
 4. ✅ `YOUTUBE_REFRESH_TOKEN` → Used in `core/config.py`, `core/youtube_uploader.py`
 5. ✅ `YOUTUBE_CHANNEL_ID` → Used in `core/config.py`, `core/youtube_uploader.py`
 6. ✅ `REDDIT_CLIENT_ID` → Used in `core/config.py`, `core/topic_discovery.py`
