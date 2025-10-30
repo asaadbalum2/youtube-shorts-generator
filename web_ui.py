@@ -38,7 +38,7 @@ async def dashboard(request: Request):
     cursor = db.cursor()
     
     # Today's stats
-    today = date.t straight().isoformat()
+    today = date.today().isoformat()
     cursor.execute("""
         SELECT videos_created, videos_uploaded, total_views, total_likes
         FROM daily_stats WHERE date = ?
