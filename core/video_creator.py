@@ -181,7 +181,8 @@ class VideoCreator:
             print(f"❌ gTTS fallback also failed: {gtts_error}")
             import traceback
             traceback.print_exc()
-            raise Exception(f"Both Edge TTS and gTTS failed. Edge TTS error: {e if 'e' in locals() else 'unknown'}, gTTS error: {gtts_error}")
+            edge_error = str(e) if 'e' in locals() else 'unknown'
+            raise Exception(f"Both Edge TTS and gTTS failed. Edge TTS error: {edge_error}, gTTS error: {gtts_error}")
     
     def _add_rhythm_pauses(self, script: str, voice_style: str) -> str:
         """Add strategic pauses to script for better rhythm and pacing"""
