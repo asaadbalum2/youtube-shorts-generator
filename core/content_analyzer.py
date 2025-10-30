@@ -72,8 +72,10 @@ Return JSON format:
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
-            # Clean invalid control characters
+            # Clean invalid control characters MORE AGGRESSIVELY
             content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
+            # Also remove any remaining control chars
+            content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
             
             # Try to parse JSON, with better error handling
             try:
@@ -82,6 +84,16 @@ Return JSON format:
                 return analysis
             except json.JSONDecodeError as json_error:
                 print(f"⚠️ JSON parse error: {json_error}")
+                # Try to extract JSON if wrapped in text
+                import json
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    try:
+                        analysis = json.loads(json_match.group(0))
+                        print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
+                        return analysis
+                    except:
+                        pass
                 print(f"⚠️ Raw content: {content[:200]}...")
                 return self._fallback_analysis(topic, script)
             

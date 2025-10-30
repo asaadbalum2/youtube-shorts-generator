@@ -8,6 +8,7 @@ import requests
 from typing import Optional, Dict, List
 from core.config import Config
 from core.youtube_audio_library import YouTubeAudioLibrary
+from core.jamendo_music import JamendoMusicAPI
 
 class DynamicMusicSelector:
     """Selects music dynamically based on content analysis"""
@@ -47,13 +48,19 @@ class DynamicMusicSelector:
         
         print(f"🎵 Selecting music: {music_style} style, {mood} mood, {tempo} tempo")
         
-        # First, try YouTube Audio Library (pre-downloaded, 100% free)
+        # First, try Jamendo API (free, trending/popular tracks)
+        jamendo = JamendoMusicAPI()
+        jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=[music_style, mood])
+        if jamendo_music:
+            return jamendo_music
+        
+        # Second, try YouTube Audio Library (pre-downloaded, 100% free)
         youtube_audio = YouTubeAudioLibrary()
         yt_music = youtube_audio.get_music(mood, music_style, duration)
         if yt_music:
             return yt_music
         
-        # Second, try local music files
+        # Third, try local music files
         local_music = self._get_local_music(music_style, mood, tempo)
         if local_music:
             return local_music

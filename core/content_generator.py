@@ -41,9 +41,10 @@ Based on research showing viral Shorts have 70-90% higher retention with strong 
    - Tell a STORY, not just facts - emotional connection drives shares (statistically proven)
    - Create an arc: Problem → Revelation → Impact (data shows narrative arcs increase engagement)
    - CRITICAL: NEVER say "there are 3 points" without listing them! ALWAYS explicitly state each point.
-   - Format REQUIREMENT: "Point 1: [actual point name]. [explanation]. Point 2: [actual point name]. [explanation]. Point 3: [actual point name]. [explanation]."
-   - Example GOOD: "First, the human brain processes images 60,000 times faster than text. Second, visual content gets 94% more views than text-only. Third, 90% of information transmitted to the brain is visual."
-   - Example BAD: "There are three reasons why visuals matter. First reason. Second reason. Third reason." (DON'T DO THIS!)
+   - MANDATORY Format: "First, [FULL POINT NAME WITH DETAILS]. [Why this matters]. Second, [FULL POINT NAME WITH DETAILS]. [Why this matters]. Third, [FULL POINT NAME WITH DETAILS]. [Why this matters]."
+   - Example GOOD: "First, microplastics are found in 83% of tap water samples worldwide, meaning most people consume plastic daily. Second, these particles accumulate in human organs, potentially causing inflammation and disease. Third, the average person ingests about 5 grams of plastic per week, equivalent to eating a credit card."
+   - Example BAD: "There are three shocking facts about microplastics. First fact. Second fact. Third fact." (THIS IS WRONG - DON'T DO THIS!)
+ dips - Each point should be 7-10 seconds when read aloud
    - Script MUST be 30-35 seconds when read aloud (test it mentally - it should fill the full duration)
    - Match pacing rhythmically: Energetic topics = faster, flowing rhythm | Serious topics = measured, impactful rhythm
    - Use simple language (8th grade level) but with emotional weight
@@ -109,10 +110,25 @@ Format your response as JSON:
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
-            # Clean invalid control characters
+            # Clean invalid control characters MORE AGGRESSIVELY
             content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
+            # Also remove any remaining control chars
+            content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
             
-            video_content = json.loads(content)
+            # Try parsing with retry if it fails
+            try:
+                video_content = json.loads(content)
+            except json.JSONDecodeError as e:
+                # Try to extract JSON if it's wrapped in text
+                import json
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    try:
+                        video_content = json.loads(json_match.group(0))
+                    except:
+                        raise e
+                else:
+                    raise e
             
             # Ensure hashtags are in description
             if video_content.get('description') and '#' not in video_content['description']:

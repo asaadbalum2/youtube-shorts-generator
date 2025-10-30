@@ -113,9 +113,9 @@ class VideoCreator:
             temp_audiofile='temp-audio.m4a',
             remove_temp=True,
             preset='slow',  # Best quality
-            bitrate='16000k',  # HIGH bitrate for quality (restore 30MB file size)
+            bitrate='20000k',  # VERY HIGH bitrate for crisp quality
             audio_bitrate='320k',  # HIGH audio quality
-            ffmpeg_params=['-crf', '15', '-pix_fmt', 'yuv420p']  # Very high quality, ensure compatibility
+            ffmpeg_params=['-crf', '14', '-pix_fmt', 'yuv420p', '-vf', 'scale=1080:1920:flags=lanczos']  # High quality with crisp scaling
         )
         
         # Cleanup
@@ -396,11 +396,15 @@ class VideoCreator:
                 bg_color='transparent'
             ).set_position(('center', self.video_size[1] * 0.82))  # Slightly higher for better visibility
             
+            # Ensure duration is set to avoid errors
+            if not hasattr(text_clip, 'duration') or text_clip.duration is None:
+                text_clip = text_clip.set_duration(5.0)
+            
             # Smooth entrance animation
             text_clip = text_clip.set_start(0.1).fadein(0.4).fadeout(0.3)
         except Exception as e:
             print(f"⚠️ Font error, using default: {e}")
-            # Fallback - simple, clean styling
+            # Fallback - simple, clean styling with explicit duration
             text_clip = TextClip(
                 text,
                 fontsize=font_size,
@@ -410,7 +414,7 @@ class VideoCreator:
                 method='caption',
                 size=(max_width, None),
                 align='center'
-            ).set_position(('center', self.video_size[1] * 0.75))
+            ).set_duration(5.0).set_position(('center', self.video_size[1] * 0.75))
             text_clip = text_clip.set_start(0.1).fadein(0.4)
         
         return text_clip
@@ -457,7 +461,8 @@ class VideoCreator:
         new_w = int(w * scale)
         new_h = int(h * scale)
         
-        clip = clip.resize((new_w, new_h))
+        # Use high-quality resize with lanczos algorithm for crispness
+        clip = clip.resize((new_w, new_h), method='lanczos')
         
         # Crop to exact size if needed
         if new_w > target_w or new_h > target_h:
