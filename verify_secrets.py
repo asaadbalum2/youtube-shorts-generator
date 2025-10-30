@@ -35,9 +35,9 @@ def verify_groq():
         print(f"  Debug: Creating Groq client...")
         client = Groq(api_key=api_key)
         print(f"  Debug: Making API call...")
-        # Test API with simple request
+        # Test API with simple request (using current model)
         response = client.chat.completions.create(
-            model="mixtral-8x7b-32768",
+            model="llama-3.1-8b-instant",  # Current fast model
             messages=[{"role": "user", "content": "Say 'OK'"}],
             max_tokens=10
         )

@@ -165,7 +165,7 @@ class TopicDiscoveryAgent:
             Format as JSON array: [{"topic": "...", "reason": "why it's viral", "score": 1-10}]"""
             
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama-3.1-8b-instant",  # Updated: using current Groq model
                 messages=[
                     {"role": "system", "content": "You are an expert at identifying viral content trends."},
                     {"role": "user", "content": prompt}
