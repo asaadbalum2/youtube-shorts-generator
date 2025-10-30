@@ -205,7 +205,7 @@ class YouTubeUploader:
         except Exception as e:
             error_str = str(e).lower()
             
-姑 # Check if it's a token expiration issue
+            # Check if it's a token expiration issue
             if any(keyword in error_str for keyword in ['401', 'unauthorized', 'invalid_grant', 'expired', 'token']):
                 print("\n" + "="*70)
                 print("❌ YOUTUBE REFRESH TOKEN EXPIRED OR INVALID")
