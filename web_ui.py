@@ -37,7 +37,7 @@ async def dashboard(request: Request):
         
         # Get stats from database
         db = sqlite3.connect(Config.DATABASE_PATH)
-    cursor = db.cursor()
+        cursor = db.cursor()
     
     # Today's stats
     today = date.today().isoformat()
