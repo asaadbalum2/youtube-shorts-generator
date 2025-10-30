@@ -238,18 +238,65 @@ class VideoCreator:
         return all_media[:num_segments] if num_segments > 0 else all_media
     
     def _extract_keywords(self, topic: str) -> List[str]:
-        """Extract search keywords from topic"""
-        # Simple keyword extraction
+        """Extract relevant search keywords from topic using AI for better accuracy"""
+        try:
+            # Use AI to extract relevant keywords for b-roll search
+            from groq import Groq
+            from core.config import Config
+            
+            if Config.GROQ_API_KEY:
+                groq_client = Groq(api_key=Config.GROQ_API_KEY)
+                prompt = f"""Extract 5-7 specific, relevant search keywords for finding b-roll video footage about this topic: "{topic}"
+
+Requirements:
+- Keywords must be directly related to the topic (no unrelated words like cats, dogs, generic images)
+- Focus on visual elements: what would you see in videos about this topic?
+- Remove filler words and abstract concepts
+- Examples: If topic is "countries with most millionaires" -> keywords: ["wealthy cities", "luxury lifestyle", "millionaires", "richest countries", "business success", "financial district"]
+
+Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
+
+                response = groq_client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        {"role": "system", "content": "You are an expert at extracting relevant visual search keywords for video footage. Never include unrelated words."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=200
+                )
+                
+                content = response.choices[0].message.content
+                
+                # Extract JSON array
+                import re
+                json_match = re.search(r'\[.*\]', content, re.DOTALL)
+                if json_match:
+                    import json
+                    keywords = json.loads(json_match.group(0))
+                    if isinstance(keywords, list) and keywords:
+                        print(f"✅ AI-extracted keywords: {keywords}")
+                        return keywords[:7]
+        except Exception as e:
+            print(f"⚠️ AI keyword extraction failed: {e}, using fallback")
+        
+        # Fallback: Improved simple extraction
         words = topic.lower().split()
         
-        # Remove common words
-        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'about', 'that', 'this', 'these', 'those'}
+        # Remove common words and non-visual words
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'about', 'that', 'this', 'these', 'those', 'with', 'highest', 'amounts', 'most', 'more', 'than', 'what', 'are', 'how', 'why'}
         keywords = [word for word in words if word not in stop_words and len(word) > 2]
+        
+        # Add topic-specific terms
+        if 'millionaire' in topic.lower():
+            keywords.extend(['wealth', 'luxury', 'business', 'success', 'money'])
+        if 'country' in topic.lower() or 'countries' in topic.lower():
+            keywords.extend(['city', 'urban', 'skyline', 'business district'])
         
         # Add the full topic as first keyword
         keywords.insert(0, topic)
         
-        return keywords[:5]  # Top 5 keywords
+        return keywords[:7]  # Top 7 keywords
     
     def _create_fallback_media(self) -> Dict:
         """Create fallback media when APIs fail"""
@@ -415,12 +462,15 @@ class VideoCreator:
             "C:/Windows/Fonts/arial.ttf",  # Fallback to regular Arial
         ]
         
-        # Try to find a working modern font
-        font_path = None
-        for fp in font_paths:
-            if os.path.exists(fp):
-                font_path = fp
-                break
+        # Use Google Fonts Manager for high-quality, modern fonts
+        # YouTube Shorts style fonts: Bebas Neue (bold, modern) or Montserrat (clean, professional)
+        font_families = ["Bebas Neue", "Montserrat", "Poppins", "Roboto"]
+        font_name = font_families[index % len(font_families)]  # Rotate fonts for variety
+        
+        # Get font path (downloads if needed)
+        font_path = self.font_manager.get_font_path(font_name, weight="700")  # Bold weight
+        
+        print(f"📝 Using font: {font_name} (weight: 700)")
         
         font_size = 95  # Larger for YouTube Shorts (increased from 80)
         max_width = self.video_size[0] - 80  # Less margin for larger text

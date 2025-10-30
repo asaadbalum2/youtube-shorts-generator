@@ -31,7 +31,7 @@ class FontManager:
     def get_font_path(self, font_name: str = None, weight: str = "700") -> str:
         """
         Get path to font file, downloading if necessary
-        weight: "400" (regular), "600" (oursemi-bold), "700" (bold), "900" (black)
+        weight: "400" (regular), "600" (semi-bold), "700" (bold), "900" (black)
         """
         if not font_name:
             font_name = "Bebas Neue"  # Default: bold, YouTube Shorts style
@@ -69,6 +69,13 @@ class FontManager:
                     # Download font file
                     font_response = requests.get(font_url, timeout=30)
                     if font_response.status_code == 200:
+                        # Convert WOFF2 to TTF if needed, or save as WOFF2
+                        # MoviePy can use TTF, so try to convert or use directly
+                        if font_url.endswith('.woff2'):
+                            # For now, save as woff2 and let system handle it
+                            # In future, could convert using fonttools
+                            output_path = output_path.with_suffix('.woff2')
+                        
                         output_path.write_bytes(font_response.content)
                         print(f"✅ Downloaded font: {font_name}")
                         return True
