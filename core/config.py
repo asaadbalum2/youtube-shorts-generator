@@ -33,6 +33,10 @@ class Config:
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")  # App password if Gmail
     REPORT_RECIPIENT = os.getenv("REPORT_RECIPIENT", "asaadbalum2@gmail.com")
     
+    # Media Providers (Free APIs)
+    PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
+    PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
+    
     # Video Settings
     MAX_TOPICS_TO_ANALYZE = 20
     MIN_TREND_SCORE = 7.0  # Out of 10
