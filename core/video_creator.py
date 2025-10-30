@@ -163,8 +163,9 @@ class VideoCreator:
             import tempfile
             
             print(f"🎤 Generating audio with gTTS (American accent fallback)")
-            # Use gTTS with American English settings
-            tts = gTTS(text=script_with_pauses, lang='en', tld='com', slow=False)
+            # Use gTTS with American English settings - tld='us' ensures American accent
+            # tld='com' can sometimes default to non-American, so use 'us' explicitly
+            tts = gTTS(text=script_with_pauses, lang='en', tld='us', slow=False)
             
             # Save to temp file first
             temp_audio = audio_path + '.tmp'

@@ -143,10 +143,19 @@ Format your response as JSON:
             # Extract JSON string
             json_str = content[start_idx:end_idx]
             
-            # Clean invalid control characters from extracted JSON
+            # Clean invalid control characters from extracted JSON - MORE AGGRESSIVE
+            # Remove ALL control characters except newlines, tabs, carriage returns
             json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
-            json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
-            json_str = json_str.encode('utf-8', errors='ignore').decode('utf-8')
+            # Only keep printable ASCII + essential whitespace
+            json_str = ''.join(char for char in json_str if (32 <= ord(char) <= 126) or char in '\n\r\t')
+            # Remove any remaining non-ASCII except in string values
+            # This is tricky - we want to keep valid Unicode in string values but remove control chars
+            # For now, use UTF-8 encoding/decoding to normalize
+            try:
+                json_str = json_str.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
+            except:
+                # If encoding fails, use strict ASCII
+                json_str = json_str.encode('ascii', errors='ignore').decode('ascii')
             
             # Check if JSON string is empty after cleaning
             if not json_str or not json_str.strip():

@@ -56,6 +56,18 @@ class EdgeTTS:
             try:
                 print(f"🔍 Attempting Edge TTS with voice: {voice_to_use}, text length: {len(text_clean)}")
                 
+                # Verify voice exists first - list available voices if needed
+                try:
+                    import edge_tts.list_voices as list_voices
+                    voices = await list_voices()
+                    voice_names = [v.get('ShortName', '') for v in voices]
+                    if voice_to_use not in voice_names:
+                        print(f"⚠️ Voice {voice_to_use} not found, using default en-US-JennyNeural")
+                        voice_to_use = "en-US-JennyNeural"
+                except:
+                    # If listing fails, continue with selected voice
+                    pass
+                
                 # Create Communicate object
                 communicate = edge_tts.Communicate(text_clean, voice_to_use)
                 
