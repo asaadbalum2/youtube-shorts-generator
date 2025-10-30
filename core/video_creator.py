@@ -343,7 +343,7 @@ class VideoCreator:
                 size=(max_width, None),
                 align='center',
                 bg_color='transparent'
-            ).set_position(('center', self.video_size[1] * 0.3))  # Position in top 30% of screen
+            ).set_position(('center', self.video_size[1] * 0.75))  # Position at bottom (YouTube Shorts subtitle style)
             
             # Add entrance animation
             text_clip = text_clip.set_start(0.2).fadein(0.3)
@@ -359,8 +359,8 @@ class VideoCreator:
                 method='caption',
                 size=(max_width, None),
                 align='center'
-            ).set_position(('center', self.video_size[1] * 0.3))
-            text_clip = text_clip.set_start(0.2).fadein(0.3)
+            ).set_position(('center', self.video_size[1] * 0.75))
+            text_clip = text_clip.set_start(0.1).fadein(0.4)
         
         return text_clip
     

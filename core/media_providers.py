@@ -253,7 +253,14 @@ class MediaFetcher:
             images = provider.search_images(query, per_page=count)
             all_images.extend(images)
         
-        # Return random selection
-        if all_images:
-            return random.sample(all_images, min(count, len(all_images)))
-        return []
+        # Return unique selection, avoiding duplicates by URL
+        seen_urls = set()
+        unique_images = []
+        for img in all_images:
+            if img.get('url') and img['url'] not in seen_urls:
+                unique_images.append(img)
+                seen_urls.add(img['url'])
+                if len(unique_images) >= count:
+                    break
+        
+        return unique_images
