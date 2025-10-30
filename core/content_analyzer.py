@@ -1,48 +1,33 @@
 """
-Content Analyzer - Analyzes video topic/script to determine mood, theme, and style
-Used to dynamically select music and voice that matches the content
+Content Analyzer - Analyzes video content to determine mood, style, and characteristics
 """
-from typing import Dict, List
-from groq import Groq
-from core.config import Config
 import json
 import re
+from typing import Dict
+from core.config import Config
+from groq import Groq
+
 
 class ContentAnalyzer:
-    """Analyzes content to determine appropriate music and voice characteristics"""
+    """Analyzes content to determine mood, music style, and voice characteristics"""
     
     def __init__(self):
-        self.groq_client = Groq(api_key=Config.GROQ_API_KEY) if Config.GROQ_API_KEY else None
+        self.groq_client = Groq(api_key=Config.GROQ_API_KEY)
     
-    def analyze_content(self, topic: str, script: str = "") -> Dict:
+    def analyze_content(self, topic: str, script: str) -> Dict:
         """
-        Analyze content to determine:
-        - Mood (serious, fun, mysterious, upbeat, dramatic, etc.)
-        - Genre (educational, entertainment, news, storytelling, etc.)
-        - Energy level (low, medium, high)
-        - Voice characteristics (formal, casual, energetic, calm, etc.)
-        - Music style (ambient, upbeat, dramatic, minimalist, etc.)
-        """
-        if not self.groq_client:
-            # Fallback analysis without AI
-            return self._fallback_analysis(topic, script)
+        Analyze video content to determine appropriate mood, music, and voice style
         
+        Returns:
+            Dictionary with mood, music_style, voice_style, energy_level, etc.
+        """
         try:
-            prompt = f"""Analyze this video content and determine the appropriate style characteristics.
+            prompt = f"""Analyze this video content and determine the appropriate styling:
 
 Topic: {topic}
-Script: {script[:500] if script else "Not provided"}
+Script: {script[:500]}
 
-Analyze and provide:
-1. Mood: (serious, fun, mysterious, upbeat, dramatic, calm, energetic, informative, dramatic, inspirational)
-2. Genre: (educational, entertainment, news, storytelling, documentary, viral, lifestyle)
-3. Energy Level: (low, medium, high)
-4. Voice Style: (formal, casual, energetic, calm, authoritative, friendly, dramatic)
-5. Music Style: (ambient, upbeat, dramatic, minimalist, cinematic, electronic, acoustic, orchestral, suspenseful, inspiring)
-6. Music Tempo: (slow, medium, fast)
-7. Content Theme: (medical, business, history, science, lifestyle, technology, nature, society)
-
-Return JSON format:
+Return ONLY a valid JSON object with this exact structure:
 {{
     "mood": "mood_name",
     "genre": "genre_name",
@@ -57,7 +42,7 @@ Return JSON format:
             response = self.groq_client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": "You are an expert at analyzing video content to determine appropriate audio and visual styling."},
+                    {"role": "system", "content": "You are an expert at analyzing video content to determine appropriate audio and visual styling. ALWAYS return ONLY valid JSON, no other text."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
@@ -71,139 +56,129 @@ Return JSON format:
                 print("⚠️ Content analysis: Empty response from AI, using fallback")
                 return self._fallback_analysis(topic, script)
             
-            # FIRST: Check if content starts with JSON or is wrapped in text
-            content_original = content.strip()
+            # STEP 1: Extract JSON from markdown code blocks if present
+            json_content = None
             
-            # Check if content is empty
-            if not content_original:
-                print("⚠️ Content analysis: Empty response from AI, using fallback")
+            if "```json" in content:
+                json_content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                json_content = content.split("```")[1].split("```")[0].strip()
+            
+            # STEP 2: If not in code blocks, extract JSON object from text
+            if not json_content:
+                # Find the first { which should be the start of the JSON object
+                start_idx = content.find('{')
+                if start_idx == -1:
+                    print("⚠️ Content analysis: No JSON object found, using fallback")
+                    return self._fallback_analysis(topic, script)
+                
+                # Find the matching closing brace
+                bracket_count = 0
+                end_idx = start_idx
+                for i in range(start_idx, len(content)):
+                    if content[i] == '{':
+                        bracket_count += 1
+                    elif content[i] == '}':
+                        bracket_count -= 1
+                        if bracket_count == 0:
+                            end_idx = i + 1
+                            break
+                
+                if end_idx <= start_idx:
+                    print("⚠️ Content analysis: Invalid JSON structure, using fallback")
+                    return self._fallback_analysis(topic, script)
+                
+                json_content = content[start_idx:end_idx]
+                print(f"🔍 Extracted JSON from text (length: {len(json_content)})")
+            
+            # STEP 3: Clean the extracted JSON
+            if not json_content or not json_content.strip():
+                print("⚠️ Content analysis: Extracted JSON is empty, using fallback")
                 return self._fallback_analysis(topic, script)
             
-            # Extract JSON from markdown code blocks if present
-            if "```json" in content_original:
-                content_original = content_original.split("```json")[1].split("```")[0].strip()
-            elif "```" in content_original:
-                content_original = content_original.split("```")[1].split("```")[0].strip()
-            
             # Clean invalid control characters
-            content_original = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content_original)
-            content_original = ''.join(char for char in content_original if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
-            content_original = content_original.encode('utf-8', errors='ignore').decode('utf-8')
+            json_content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_content)
+            json_content = ''.join(char for char in json_content if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+            json_content = json_content.encode('utf-8', errors='ignore').decode('utf-8')
             
-            # SMART EXTRACTION: If content doesn't start with { or [, extract JSON first
-            json_content = content_original.strip()
+            if not json_content or not json_content.strip():
+                print("⚠️ Content analysis: JSON content empty after cleaning, using fallback")
+                return self._fallback_analysis(topic, script)
             
-            # Check if content starts with JSON
-            if not json_content.startswith('{') and not json_content.startswith('['):
-                # Content has text prefix - extract JSON object
-                start_idx = json_content.find('{')
-                if start_idx == -1:
-                    start_idx = json_content.find('[')
-                
-                if start_idx != -1:
-                    # Find matching closing brace/bracket
-                    bracket_count = 0
-                    end_idx = start_idx
-                    open_char = json_content[start_idx]
-                    close_char = '}' if open_char == '{' else ']'
-                    
-                    for i in range(start_idx, len(json_content)):
-                        if json_content[i] == open_char:
-                            bracket_count += 1
-                        elif json_content[i] == close_char:
-                            bracket_count -= 1
-                            if bracket_count == 0:
-                                end_idx = i + 1
-                                break
-                    
-                    if end_idx > start_idx:
-                        json_content = json_content[start_idx:end_idx]
-                        print(f"🔍 Extracted JSON from wrapped text (length: {len(json_content)})")
-            
-            # Try to parse JSON
+            # STEP 4: Parse the cleaned JSON
             try:
                 analysis = json.loads(json_content)
                 print(f"✅ Content analyzed: {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
                 return analysis
             except json.JSONDecodeError as json_error:
-                # Last resort: try to find and parse any JSON object in the content
                 print(f"⚠️ JSON parse error: {json_error}")
-                print(f"⚠️ Attempted JSON content (first 300 chars): {json_content[:300]}")
-                
-                # Try to find ANY valid JSON object
-                start_idx = content_original.find('{')
-                if start_idx != -1:
-                    bracket_count = 0
-                    end_idx = start_idx
-                    for i in range(start_idx, len(content_original)):
-                        if content_original[i] == '{':
-                            bracket_count += 1
-                        elif content_original[i] == '}':
-                            bracket_count -= 1
-                            if bracket_count == 0:
-                                end_idx = i + 1
-                                break
-                    
-                    if end_idx > start_idx:
-                        json_str = content_original[start_idx:end_idx]
-                        try:
+                print(f"⚠️ JSON content (first 300 chars): {json_content[:300]}")
+                # Last resort: try to re-extract and parse
+                try:
+                    start_idx = content.find('{')
+                    if start_idx != -1:
+                        bracket_count = 0
+                        end_idx = start_idx
+                        for i in range(start_idx, len(content)):
+                            if content[i] == '{':
+                                bracket_count += 1
+                            elif content[i] == '}':
+                                bracket_count -= 1
+                                if bracket_count == 0:
+                                    end_idx = i + 1
+                                    break
+                        if end_idx > start_idx:
+                            json_str = content[start_idx:end_idx]
                             analysis = json.loads(json_str)
-                            print(f"✅ Content analyzed (fallback extraction): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
+                            print(f"✅ Content analyzed (retry): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
                             return analysis
-                        except Exception as extract_error:
-                            print(f"⚠️ Fallback extraction also failed: {extract_error}")
-                
+                except:
+                    pass
                 return self._fallback_analysis(topic, script)
             
         except Exception as e:
             print(f"⚠️ Content analysis error: {e}, using fallback")
+            import traceback
+            traceback.print_exc()
             return self._fallback_analysis(topic, script)
     
     def _fallback_analysis(self, topic: str, script: str) -> Dict:
         """Fallback analysis based on keywords"""
         topic_lower = topic.lower() + " " + script.lower()
         
-        # Mood detection
-        if any(word in topic_lower for word in ['medical', 'health', 'condition', 'disease', 'treatment']):
-            mood = "serious"
-            music_style = "ambient"
-            voice_style = "calm"
-        elif any(word in topic_lower for word in ['wealth', 'money', 'rich', 'success', 'millionaire']):
-            mood = "inspirational"
-            music_style = "upbeat"
-            voice_style = "energetic"
-        elif any(word in topic_lower for word in ['dark', 'history', 'secret', 'truth', 'hidden']):
-            mood = "mysterious"
-            music_style = "dramatic"
-            voice_style = "dramatic"
-        elif any(word in topic_lower for word in ['weird', 'amazing', 'shocking', 'incredible']):
-            mood = "energetic"
-            music_style = "upbeat"
-            voice_style = "energetic"
+        # Determine mood
+        if any(word in topic_lower for word in ["shocking", "dark", "secret", "truth", "hidden", "revealed"]):
+            mood = "dramatic"
+        elif any(word in topic_lower for word in ["tip", "hack", "trick", "how to", "guide"]):
+            mood = "informative"
+        elif any(word in topic_lower for word in ["funny", "hilarious", "laugh", "comedy"]):
+            mood = "lighthearted"
         else:
             mood = "informative"
-            music_style = "minimalist"
+        
+        # Determine voice style
+        if mood == "dramatic":
+            voice_style = "authoritative"
+        elif mood == "informative":
+            voice_style = "professional"
+        else:
             voice_style = "casual"
         
-        # Energy level
-        if any(word in topic_lower for word in ['amazing', 'shocking', 'incredible', 'wow']):
-            energy = "high"
-            tempo = "fast"
-        elif any(word in topic_lower for word in ['calm', 'peaceful', 'meditation', 'relax']):
-            energy = "low"
-            tempo = "slow"
+        # Determine music style
+        if mood == "dramatic":
+            music_style = "cinematic"
+        elif mood == "informative":
+            music_style = "ambient"
         else:
-            energy = "medium"
-            tempo = "medium"
+            music_style = "upbeat"
         
         return {
             "mood": mood,
             "genre": "educational",
-            "energy_level": energy,
+            "energy_level": "medium",
             "voice_style": voice_style,
             "music_style": music_style,
-            "music_tempo": tempo,
+            "music_tempo": "medium",
             "content_theme": "general",
-            "keywords": topic.split()[:5]
+            "keywords": topic.lower().split()[:5]
         }
-
