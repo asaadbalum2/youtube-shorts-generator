@@ -366,6 +366,8 @@
                                 style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">
                             📥 Download Video
                         </button>
+                        {% else %}
+                        <br><span style="color: #999; font-size: 12px;">No file path available for download</span>
                         {% endif %}
                         {% endif %}
                     </div>
@@ -475,18 +477,27 @@
             btn.disabled = true;
             btn.textContent = '🧪 Testing...';
             
+            console.log('🧪 Testing YouTube Token...');
+            
             try {
+                console.log('📡 Sending request to /api/test-token');
                 const response = await fetch('/api/test-token', {
                     method: 'POST'
                 });
+                console.log('📡 Response received:', response.status);
+                
                 const data = await response.json();
+                console.log('📡 Response data:', data);
                 
                 if (data.valid) {
+                    console.log('✅ Token test successful');
                     alert(`✅ Token is working!\n\nChannel ID: ${data.channel_id}\nMessage: ${data.message}\n\nCost: 1 quota unit (minimal test)`);
                 } else {
+                    console.log('❌ Token test failed:', data.error);
                     alert(`❌ Token test failed!\n\nError: ${data.error}\n\nYou may need to refresh the token.`);
                 }
             } catch (error) {
+                console.error('❌ Token test error:', error);
                 alert('❌ Error testing token: ' + error.message);
             } finally {
                 btn.disabled = false;
@@ -499,18 +510,27 @@
             btn.disabled = true;
             btn.textContent = '🤖 Testing...';
             
+            console.log('🤖 Testing Groq API...');
+            
             try {
+                console.log('📡 Sending request to /api/test-groq');
                 const response = await fetch('/api/test-groq', {
                     method: 'POST'
                 });
+                console.log('📡 Response received:', response.status);
+                
                 const data = await response.json();
+                console.log('📡 Response data:', data);
                 
                 if (data.success) {
+                    console.log('✅ Groq test successful');
                     alert(`✅ Groq API is working!\n\nResponse: ${data.response}\n\nCost: Free (no quota)`);
                 } else {
+                    console.log('❌ Groq test failed:', data.error);
                     alert(`❌ Groq test failed!\n\nError: ${data.error}`);
                 }
             } catch (error) {
+                console.error('❌ Groq test error:', error);
                 alert('❌ Error testing Groq: ' + error.message);
             } finally {
                 btn.disabled = false;
@@ -523,18 +543,27 @@
             btn.disabled = true;
             btn.textContent = '🔴 Testing...';
             
+            console.log('🔴 Testing Reddit API...');
+            
             try {
+                console.log('📡 Sending request to /api/test-reddit');
                 const response = await fetch('/api/test-reddit', {
                     method: 'POST'
                 });
+                console.log('📡 Response received:', response.status);
+                
                 const data = await response.json();
+                console.log('📡 Response data:', data);
                 
                 if (data.success) {
+                    console.log('✅ Reddit test successful');
                     alert(`✅ Reddit API is working!\n\nFound ${data.posts_found} posts\nSubreddit: ${data.subreddit}\n\nCost: Free (no quota)`);
                 } else {
+                    console.log('❌ Reddit test failed:', data.error);
                     alert(`❌ Reddit test failed!\n\nError: ${data.error}`);
                 }
             } catch (error) {
+                console.error('❌ Reddit test error:', error);
                 alert('❌ Error testing Reddit: ' + error.message);
             } finally {
                 btn.disabled = false;
@@ -543,12 +572,18 @@
         }
         
         async function downloadVideo(videoId, title) {
+            console.log('📥 Downloading video:', videoId, title);
+            
             try {
+                console.log('📡 Sending download request to:', `/api/download-video/${videoId}`);
                 const response = await fetch(`/api/download-video/${videoId}`, {
                     method: 'GET'
                 });
                 
+                console.log('📡 Download response status:', response.status);
+                
                 if (response.ok) {
+                    console.log('✅ Download successful, creating blob...');
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -558,11 +593,14 @@
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
+                    console.log('✅ Download completed');
                 } else {
                     const error = await response.json();
+                    console.error('❌ Download failed:', error);
                     alert(`❌ Download failed: ${error.error || 'Unknown error'}`);
                 }
             } catch (error) {
+                console.error('❌ Download error:', error);
                 alert('❌ Error downloading video: ' + error.message);
             }
         }

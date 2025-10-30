@@ -68,7 +68,7 @@ async def dashboard(request: Request):
         cursor = db.cursor()
         try:
             cursor.execute("""
-                SELECT video_id, title, topic, youtube_url, created_at, status
+                SELECT video_id, title, topic, youtube_url, created_at, status, video_file_path
                 FROM videos
                 ORDER BY created_at DESC
                 LIMIT 20
@@ -82,12 +82,14 @@ async def dashboard(request: Request):
         recent_videos = []
         for video in recent_videos_raw:
             recent_videos.append({
+                'video_id': video[0] if len(video) > 0 and video[0] else '',
                 'id': video[0] if len(video) > 0 and video[0] else '',
                 'title': video[1] if len(video) > 1 and video[1] else 'Untitled',
                 'topic': video[2] if len(video) > 2 and video[2] else '',
                 'url': video[3] if len(video) > 3 and video[3] else '',
                 'created': str(video[4]) if len(video) > 4 and video[4] else '',
-                'status': video[5] if len(video) > 5 and video[5] else 'pending'
+                'status': video[5] if len(video) > 5 and video[5] else 'pending',
+                'video_file_path': video[6] if len(video) > 6 and video[6] else None
             })
         
         # Debug logging
