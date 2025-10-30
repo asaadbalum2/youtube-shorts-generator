@@ -30,7 +30,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
-            self.wfile.write(b"""
+            html_content = """
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -41,7 +41,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
                             text-align: center;
                             padding: 50px;
                             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
- predictive                            color: white;
+                            color: white;
                         }
                         .container {
                             background: white;
@@ -57,13 +57,14 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
                 </head>
                 <body>
                     <div class="container">
-                        <h1>✅ Authorization Successful!</h1>
+                        <h1>Authorization Successful!</h1>
                         <p>You can close this window now.</p>
                         <p>Return to the terminal to complete the token generation.</p>
                     </div>
                 </body>
                 </html>
-            """)
+            """
+            self.wfile.write(html_content.encode('utf-8'))
         elif 'error' in params:
             OAuthCallbackHandler.error = params['error'][0]
             error_desc = params.get('error_description', [''])[0]
@@ -95,7 +96,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
                 </head>
                 <body>
                     <div class="container">
-                        <h1>❌ Authorization Failed</h1>
+                        <h1>Authorization Failed</h1>
                         <p>Error: {OAuthCallbackHandler.error}</p>
                         <p>{error_desc}</p>
                         <p>Please check the terminal for instructions.</p>
