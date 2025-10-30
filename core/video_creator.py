@@ -127,7 +127,7 @@ class VideoCreator:
         return output_path
     
     def _generate_dynamic_audio(self, script: str, analysis: Dict) -> str:
-        """Generate TTS audio with dynamic voice selection南县 content"""
+        """Generate TTS audio with dynamic voice selection based on content"""
         print("🎤 Generating dynamic TTS audio...")
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
