@@ -135,31 +135,53 @@ class VideoCreator:
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
         
-        # CRITICAL: Use Edge TTS ONLY - American accent guaranteed, better rhythm
+        # CRITICAL: Try Edge TTS first, fallback to gTTS if it fails
+        voice_style = analysis.get("voice_style", "casual")
+        script_with_pauses = self._add_rhythm_pauses(script, voice_style)
+        
+        # Try Edge TTS first
         try:
             from core.edge_tts import EdgeTTS
             edge_tts = EdgeTTS()
-            voice_style = analysis.get("voice_style", "casual")
-            
-            # Improve script rhythm by adding strategic pauses for better pacing
-            # This makes narration more engaging and dynamic (without needing SSML)
-            script_with_pauses = self._add_rhythm_pauses(script, voice_style)
-            
-            print(f"🎤 Generating audio with Edge TTS (voice style: {voice_style})")
+            print(f"🎤 Attempting Edge TTS (voice style: {voice_style})")
             result = edge_tts.generate_speech(script_with_pauses, audio_path, voice_style)
             
-            if result and os.path.exists(result):
+            if result and os.path.exists(result) and os.path.getsize(result) > 1000:
                 print(f"✅ Edge TTS SUCCESS - American accent with dynamic rhythm")
                 return result
             else:
-                raise Exception("Edge TTS failed - no audio file created")
+                print(f"⚠️ Edge TTS failed or file too small, trying gTTS fallback...")
+                raise Exception("Edge TTS failed - trying fallback")
         except ImportError:
-            raise Exception("Edge TTS is required! Install: pip install edge-tts")
+            print(f"⚠️ Edge TTS not available, using gTTS fallback...")
         except Exception as e:
-            print(f"❌ Edge TTS failed: {e}")
+            print(f"⚠️ Edge TTS error: {e}, trying gTTS fallback...")
+        
+        # Fallback to gTTS if Edge TTS fails
+        try:
+            from gtts import gTTS
+            import tempfile
+            
+            print(f"🎤 Generating audio with gTTS (American accent fallback)")
+            # Use gTTS with American English settings
+            tts = gTTS(text=script_with_pauses, lang='en', tld='com', slow=False)
+            
+            # Save to temp file first
+            temp_audio = audio_path + '.tmp'
+            tts.save(temp_audio)
+            
+            # Verify file was created
+            if os.path.exists(temp_audio) and os.path.getsize(temp_audio) > 1000:
+                os.rename(temp_audio, audio_path)
+                print(f"✅ gTTS SUCCESS - American accent (fallback)")
+                return audio_path
+            else:
+                raise Exception("gTTS failed - file not created or too small")
+        except Exception as gtts_error:
+            print(f"❌ gTTS fallback also failed: {gtts_error}")
             import traceback
             traceback.print_exc()
-            raise Exception(f"Edge TTS is required for proper accent. Error: {e}")
+            raise Exception(f"Both Edge TTS and gTTS failed. Edge TTS error: {e if 'e' in locals() else 'unknown'}, gTTS error: {gtts_error}")
     
     def _add_rhythm_pauses(self, script: str, voice_style: str) -> str:
         """Add strategic pauses to script for better rhythm and pacing"""

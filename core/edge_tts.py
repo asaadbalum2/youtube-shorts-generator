@@ -52,13 +52,22 @@ class EdgeTTS:
                 print(f"⚠️ Text too long ({len(text_clean)} chars), truncating to {max_text_length}...")
                 text_clean = text_clean[:max_text_length].rsplit('.', 1)[0] + '.'  # Truncate at sentence boundary
             
-            # Try Edge TTS - use stream=False for better reliability
+            # Try Edge TTS - verify voice exists first
             try:
+                # Verify voice is available
+                print(f"🔍 Attempting Edge TTS with voice: {voice_to_use}, text length: {len(text_clean)}")
+                
+                # Try to list voices to verify connectivity (optional debug)
+                # voices = await edge_tts.list_voices()
+                # print(f"🔍 Available voices check: {len(voices)} voices found")
+                
                 communicate = edge_tts.Communicate(text_clean, voice_to_use)
                 
                 # Use a temporary file first to check if audio was generated
                 temp_output = output_path + '.tmp'
+                print(f"🔍 Saving to temp file: {temp_output}")
                 await communicate.save(temp_output)
+                print(f"🔍 Temp file created: {os.path.exists(temp_output)}, size: {os.path.getsize(temp_output) if os.path.exists(temp_output) else 0}")
                 
                 # Verify file was created and has content
                 if os.path.exists(temp_output) and os.path.getsize(temp_output) > 1000:  # At least 1KB
