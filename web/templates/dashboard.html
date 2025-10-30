@@ -406,7 +406,7 @@
             
             try {
                 // Trigger via main app endpoint (not dashboard endpoint)
-                const response = await fetch('/../generate', {
+                const response = await fetch('/dashboard/generate', {
                     method: 'POST'
                 });
                 const data = await response.json();
@@ -427,7 +427,7 @@
         
         async function refreshStats() {
             try {
-                const response = await fetch('/api/stats');
+                const response = await fetch('/dashboard/api/stats');
                 const data = await response.json();
                 
                 document.getElementById('today-created').textContent = data.today.created;
@@ -445,7 +445,7 @@
             btn.disabled = true;
             
             try {
-                const response = await fetch('/../retry-upload', {
+                const response = await fetch('/dashboard/retry-upload', {
                     method: 'POST'
                 });
                 const data = await response.json();
@@ -469,7 +469,7 @@
             btn.textContent = '🔄 Refreshing...';
             
             try {
-                const response = await fetch('/api/refresh-token', {
+                const response = await fetch('/dashboard/api/refresh-token', {
                     method: 'POST'
                 });
                 const data = await response.json();
@@ -496,7 +496,7 @@
             
             try {
                 console.log('📡 Sending request to /api/test-token');
-                const response = await fetch('/api/test-token', {
+                const response = await fetch('/dashboard/api/test-token', {
                     method: 'POST'
                 });
                 console.log('📡 Response received:', response.status);
@@ -529,7 +529,7 @@
             
             try {
                 console.log('📡 Sending request to /api/test-groq');
-                const response = await fetch('/api/test-groq', {
+                const response = await fetch('/dashboard/api/test-groq', {
                     method: 'POST'
                 });
                 console.log('📡 Response received:', response.status);
@@ -562,7 +562,7 @@
             
             try {
                 console.log('📡 Sending request to /api/test-reddit');
-                const response = await fetch('/api/test-reddit', {
+                const response = await fetch('/dashboard/api/test-reddit', {
                     method: 'POST'
                 });
                 console.log('📡 Response received:', response.status);
@@ -591,7 +591,7 @@
             
             try {
                 console.log('📡 Sending download request to:', `/api/download-video/${videoId}`);
-                const response = await fetch(`/api/download-video/${videoId}`, {
+                const response = await fetch(`/dashboard/api/download-video/${videoId}`, {
                     method: 'GET'
                 });
                 
@@ -635,7 +635,7 @@
         
         // Test if we can make a simple fetch request
         console.log('🔧 Testing basic fetch...');
-        fetch('/api/health')
+        fetch('/dashboard/api/health')
             .then(response => response.json())
             .then(data => console.log('🔧 Health check response:', data))
             .catch(error => console.error('🔧 Health check error:', error));

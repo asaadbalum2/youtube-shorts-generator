@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Console Test</title>
+</head>
+<body>
+    <h1>Console Test Page</h1>
+    <p>Open browser console (F12) to see the logs below:</p>
+    <button onclick="testFunction()">Test Button</button>
+    <div id="output"></div>
+    
+    <script>
+        console.log('🔧 This is a test log message');
+        console.log('🔧 If you can see this, your browser console is working');
+        
+        function testFunction() {
+            console.log('🔧 Button clicked!');
+            document.getElementById('output').innerHTML = 'Button works! Check console for logs.';
+        }
+        
+        // Test API call
+        fetch('https://fba4b05c-3ab8-466c-9cfc-bc8cc6378b68-00-24shrkm35btwt.pike.replit.dev/api/health')
+            .then(response => response.json())
+            .then(data => {
+                console.log('🔧 API test successful:', data);
+            })
+            .catch(error => {
+                console.error('🔧 API test failed:', error);
+            });
+    </script>
+</body>
+</html>
