@@ -29,6 +29,7 @@ class VideoCreator:
         self.content_analyzer = ContentAnalyzer()
         self.music_selector = DynamicMusicSelector()
         self.voice_selector = DynamicVoiceSelector()
+        self.font_manager = FontManager()
         os.makedirs(self.temp_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
         
@@ -166,31 +167,23 @@ class VideoCreator:
         for keyword in keywords[:6]:  # Try more keywords
             print(f"🔍 Searching for: {keyword}")
             
-            # PREFER VIDEOS OVER IMAGES - get multiple videos per keyword
+            # STRICT: ONLY VIDEOS - NO IMAGES (user requirement)
             videos = []
             for provider in self.media_fetcher.providers:
                 try:
-                    provider_videos = provider.search_videos(keyword, per_page=5)
+                    # Get more videos per keyword for better selection
+                    provider_videos = provider.search_videos(keyword, per_page=10)
                     videos.extend(provider_videos)
                 except:
                     pass
             
-            # Add unique videos
+            # Filter: ONLY videos, no images
             for media in videos:
-                if media and media.get('url') and media['url'] not in used_urls:
-                    all_media.append(media)
-                    used_urls.add(media['url'])
-                    if len(all_media) >= target_count:
-                        break
-            
-            if len(all_media) >= target_count:
-                break
-            
-            # Only use images as LAST resort if no videos found
-            if len(all_media) < target_count:
-                images = self.media_fetcher.get_images(keyword, count=2)
-                for media in images:
-                    if media and media.get('url') and media['url'] not in used_urls:
+                if (media and media.get('url') and 
+                    media.get('type') == 'video' and  # Ensure it's marked as video
+                    media['url'] not in used_urls):
+                    # Additional check: make sure it's actually a video URL
+                    if any(ext in media['url'].lower() for ext in ['.mp4', '.mov', '.webm', '.avi']):
                         all_media.append(media)
                         used_urls.add(media['url'])
                         if len(all_media) >= target_count:
@@ -198,21 +191,43 @@ class VideoCreator:
             
             if len(all_media) >= target_count:
                 break
+            
+            # STRICT: NO IMAGES - Only videos (user requirement)
+            # Skip image fallback - we only want videos
+            
+            if len(all_media) >= target_count:
+                break
         
-        # If still not enough, try different search variations (prefer videos)
+        # If still not enough, try different search variations (VIDEOS ONLY)
         if len(all_media) < num_segments:
-            variations = ['people', 'nature', 'technology', 'lifestyle', 'abstract', 'urban']
-            for variation in variations:
-                # Try video first
-                media = self.media_fetcher.get_image(f"{variation} {keywords[0] if keywords else 'background'}", prefer_video=True)
-                if not media or media.get('url') in used_urls:
-                    # Fallback to image only if video not found
-                    media = self.media_fetcher.get_image(f"{variation} {keywords[0] if keywords else 'background'}", prefer_video=False)
-                if media and media.get('url') and media['url'] not in used_urls:
-                    all_media.append(media)
-                    used_urls.add(media['url'])
-                    if len(all_media) >= target_count:
-                        break
+            # Build related search terms from keywords
+            related_terms = []
+            for kw in keywords[:3]:
+                if 'millionaire' in kw.lower() or 'wealth' in kw.lower():
+                    related_terms.extend(['stakingcity', 'business people', 'luxury cars', 'financial district', 'corporate office'])
+                elif 'country' in kw.lower() or 'countries' in kw.lower():
+                    related_terms.extend(['city skyline', 'urban landscape', 'business district', 'city lights'])
+            
+            for term in related_terms[:5]:
+                # Only search for videos
+                for provider in self.media_fetcher.providers:
+                    try:
+                        videos = provider.search_videos(term, per_page=3)
+                        for media in videos:
+                            if (media and media.get('url') and 
+                                media.get('type') == 'video' and
+                                media['url'] not in used_urls):
+                                if any(ext in media['url'].lower() for ext in ['.mp4', '.mov', '.webm', '.avi']):
+                                    all_media.append(media)
+                                    used_urls.add(media['url'])
+                                    if len(all_media) >= target_count:
+                                        break
+                        if len(all_media) >= target_count:
+                            break
+                    except:
+                        pass
+                if len(all_media) >= target_count:
+                    shell
         
         # If no media found, use fallback
         if not all_media:

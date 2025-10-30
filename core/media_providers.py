@@ -54,7 +54,8 @@ class PixabayProvider(MediaProvider):
                     'width': hit.get('imageWidth'),
                     'height': hit.get('imageHeight'),
                     'tags': hit.get('tags', ''),
-                    'provider': 'pixabay'
+                    'provider': 'pixabay',
+                    'type': 'image'  # Explicitly mark as image
                 })
             
             print(f"✅ Pixabay: Found {len(results)} images for '{query}'")
@@ -138,7 +139,7 @@ class PexelsProvider(MediaProvider):
             for photo in data.get('photos', []):
                 results.append({
                     'id': photo.get('id'),
-                    'url': photo.get('src', {}).get('large') or photo.get('src', {}).get('medium'),
+                    'url': photo.get('src', {}).get('original') or photo.get('src', {}).get('large') or photo.get('src', {}).get('medium'),  # Use original for highest quality
                     'preview_url': photo.get('src', {}).get('tiny'),
                     'width': photo.get('width'),
                     'height': photo.get('height'),
@@ -194,7 +195,10 @@ class PexelsProvider(MediaProvider):
                         'preview_url': video.get('image'),
                         'duration': video.get('duration', 0),
                         'tags': video.get('tags', []),
-                        'provider': 'pexels'
+                        'provider': 'pexels',
+                        'type': 'video',  # Explicitly mark as video
+                        'width': next((vf.get('width', 0) for vf in video_files if vf.get('link') == video_url), 0),
+                        'height': next((vf.get('height', 0) for vf in video_files if vf.get('link') == video_url), 0)
                     })
             
             print(f"✅ Pexels: Found {len(results)} videos for '{query}'")
