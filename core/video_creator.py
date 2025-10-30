@@ -16,12 +16,18 @@ import tempfile
 from typing import Dict, Optional, List
 from core.config import Config
 from core.media_providers import MediaFetcher
+from core.content_analyzer import ContentAnalyzer
+from core.dynamic_music import DynamicMusicSelector
+from core.dynamic_voice import DynamicVoiceSelector
 
 class VideoCreator:
     def __init__(self):
         self.temp_dir = Config.TEMP_DIR
         self.output_dir = Config.OUTPUT_DIR
         self.media_fetcher = MediaFetcher()
+        self.content_analyzer = ContentAnalyzer()
+        self.music_selector = DynamicMusicSelector()
+        self.voice_selector = DynamicVoiceSelector()
         os.makedirs(self.temp_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
         
@@ -44,8 +50,12 @@ class VideoCreator:
         script = content.get('script', '')
         print(f"🎬 Creating high-quality video for: {topic}")
         
-        # 1. Generate high-quality audio (TTS)
-        audio_path = self._generate_high_quality_audio(script)
+        # 0. Analyze content to determine mood, style, music, voice
+        content_analysis = self.content_analyzer.analyze_content(topic, script)
+        print(f"📊 Content analysis: {content_analysis.get('mood')} mood, {content_analysis.get('music_style')} music, {content_analysis.get('voice_style')} voice")
+        
+        # 1. Generate high-quality audio (TTS) with dynamic voice
+        audio_path = self._generate_dynamic_audio(script, content_analysis)
         
         # 2. Calculate duration - ensure minimum 30 seconds
         audio_clip = AudioFileClip(audio_path)
@@ -65,8 +75,8 @@ class VideoCreator:
         # 4. Create high-quality visual sequence
         video_clips = self._create_high_quality_visuals(script, duration, topic, broll_media)
         
-        # 5. Add background music
-        music_path = self._get_background_music(topic, duration)
+        # 5. Add background music (dynamic based on content)
+        music_path = self.music_selector.get_music_for_content(content_analysis, duration)
         
         # 6. Combine audio, visuals, and music
         final_video = self._combine_audio_video(video_clips, audio_path, duration, music_path)
@@ -96,23 +106,12 @@ class VideoCreator:
         print(f"✅ High-quality video created: {output_path}")
         return output_path
     
-    def _generate_high_quality_audio(self, script: str) -> str:
-        """Generate high-quality TTS audio from script"""
-        print("🎤 Generating high-quality TTS audio...")
-        
-        # Use normal speed (not slow) with natural voice
-        tts = gTTS(
-            text=script, 
-            lang='en', 
-            slow=False,  # Normal speed for better engagement
-            tld='com'  # Standard English
-        )
+    def _generate_dynamic_audio(self, script: str, analysis: Dict) -> str:
+        """Generate TTS audio with dynamic voice selection based on content"""
+        print("🎤 Generating dynamic TTS audio...")
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
-        tts.save(audio_path)
-        
-        print(f"✅ Audio saved: {audio_path}")
-        return audio_path
+        return self.voice_selector.generate_speech(script, analysis, audio_path)
     
     def _fetch_broll_media(self, topic: str, duration: float) -> List[Dict]:
         """Fetch real b-roll images and videos from Pexels/Pixabay"""

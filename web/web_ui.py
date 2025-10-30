@@ -414,7 +414,10 @@ async def delete_video(video_id: str):
     try:
         from core.database import Database
         import os
+        from urllib.parse import unquote
         
+        # Decode URL-encoded characters like %25 for %
+        video_id = unquote(video_id)
         print(f"🗑️ Delete request for video ID: {video_id}")
         
         db = Database()
