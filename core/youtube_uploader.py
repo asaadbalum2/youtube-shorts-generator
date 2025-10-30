@@ -208,7 +208,7 @@ class YouTubeUploader:
             # Check if it's a quota issue (different from token issue)
             if 'quota' in error_str or ('403' in str(e) and 'quotaexceeded' in error_str):
                 print("\n" + "="*70)
-                print("⚠️  YOUTUBE API QUOTA WEEK")
+                print("⚠️  YOUTUBE API QUOTA EXCEEDED")
                 print("="*70)
                 print("\nYou've used up your daily YouTube API quota (10,000 units/day by default).")
                 print("\nThis is NOT a token issue - your token is valid!")
