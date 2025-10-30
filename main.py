@@ -45,12 +45,76 @@ class YouTubeShortsGenerator:
         
         logger.info("YouTube Shorts Generator initialized")
     
-    def generate_and_upload_video(self) -> Optional[dict]:
+    def retry_failed_upload(self, max_retries: int = 3) -> Optional[dict]:
         """
-        Main workflow: Generate one video and upload it
+        Retry uploading a video that previously failed
         
         Returns: Video info dict or None if failed
         """
+        try:
+            # Get failed uploads
+            failed_videos = self.db.get_failed_uploads(max_retries=max_retries)
+            
+            if not failed_videos:
+                logger.info("No failed uploads to retry")
+                return None
+            
+            # Try the oldest failed upload
+            video_data = failed_videos[0]
+            video_path = video_data['video_file_path']
+            
+            if not video_path or not os.path.exists(video_path):
+                logger.warning(f"Video file not found: {video_path}, skipping")
+                return None
+            
+            logger.info(f"Retrying upload for video: {video_data['title']}")
+            logger.info(f"File: {video_path}")
+            
+            # Retry upload
+            upload_result = self.youtube_uploader.upload_video(
+                video_path=video_path,
+                title=video_data['title'],
+                description=video_data['description'],
+                tags=[]
+            )
+            
+            if upload_result:
+                # Update database
+                self.db.update_video_upload(
+                    video_id=video_data['video_id'],
+                    youtube_url=upload_result['url']
+                )
+                
+                today = date.today().isoformat()
+                self.db.update_daily_stats(today, videos_uploaded=1)
+                
+                logger.info(f"✅ Successfully retried upload: {upload_result['url']}")
+                return upload_result
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error retrying upload: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return None
+    
+    def generate_and_upload_video(self, retry_failed_first: bool = True) -> Optional[dict]:
+        """
+        Main workflow: Generate one video and upload it
+        Optionally retries failed uploads first before generating new video
+        
+        Returns: Video info dict or None if failed
+        """
+        # First, try to retry a failed upload if any exist
+        if retry_failed_first:
+            logger.info("Checking for failed uploads to retry...")
+            retry_result = self.retry_failed_upload()
+            if retry_result:
+                logger.info("Successfully retried a failed upload, skipping new generation")
+                return retry_result
+            logger.info("No failed uploads to retry, generating new video...")
+        
         try:
             logger.info("=" * 60)
             logger.info("Starting video generation workflow")
