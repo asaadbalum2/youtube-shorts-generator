@@ -286,4 +286,44 @@ class Database:
             })
         
         return videos
+    
+    def update_video_file_path(self, video_id: str, file_path: str):
+        """Update video file path (for existing videos)"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE videos 
+            SET video_file_path = ?
+            WHERE video_id = ?
+        """, (file_path, video_id))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_videos_without_file_path(self) -> List[Dict]:
+        """Get videos that don't have file paths set"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT video_id, title, status
+            FROM videos
+            WHERE (video_file_path IS NULL OR video_file_path = '')
+                AND youtube_url IS NULL
+                AND status != 'uploaded'
+        """)
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        videos = []
+        for row in rows:
+            videos.append({
+                'video_id': row[0],
+                'title': row[1],
+                'status': row[2]
+            })
+        
+        return videos
 

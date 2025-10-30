@@ -52,7 +52,25 @@ class YouTubeShortsGenerator:
         Returns: Video info dict or None if failed
         """
         try:
-            # Get failed uploads
+            # First, try to find and update file paths for existing videos
+            videos_without_paths = self.db.get_videos_without_file_path()
+            for video in videos_without_paths:
+                video_id = video['video_id']
+                # Try to find the video file in output directory
+                possible_paths = [
+                    f"./output/short_{video_id}.mp4",
+                    f"./output/{video_id}.mp4",
+                    f"./output/{video_id}",
+                ]
+                # Also try to match by partial video_id
+                import glob
+                matching_files = glob.glob(f"./output/*{video_id}*.mp4")
+                if matching_files:
+                    file_path = matching_files[0]
+                    self.db.update_video_file_path(video_id, file_path)
+                    logger.info(f"Found and updated file path for {video_id}: {file_path}")
+            
+            # Get failed uploads (now with updated paths)
             failed_videos = self.db.get_failed_uploads(max_retries=max_retries)
             
             if not failed_videos:
@@ -62,6 +80,16 @@ class YouTubeShortsGenerator:
             # Try the oldest failed upload
             video_data = failed_videos[0]
             video_path = video_data['video_file_path']
+            
+            # If still no path, try to find it
+            if not video_path:
+                video_id = video_data['video_id']
+                import glob
+                matching_files = glob.glob(f"./output/*{video_id}*.mp4")
+                if matching_files:
+                    video_path = matching_files[0]
+                    self.db.update_video_file_path(video_id, video_path)
+                    logger.info(f"Found video file: {video_path}")
             
             if not video_path or not os.path.exists(video_path):
                 logger.warning(f"Video file not found: {video_path}, skipping")
