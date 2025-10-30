@@ -469,7 +469,7 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
         
         # PRIORITIZE Google Fonts - modern YouTube Shorts style
         font_families = ["Bebas Neue", "Montserrat", "Poppins", "Roboto", "Inter"]
-        font_name = font_families[index % len(font_famil Transformeries)]  # Rotate fonts
+        font_name = font_families[index % len(font_families)]  # Rotate fonts
         
         # Get font from Google Fonts (downloads if needed)
         font_path = self.font_manager.get_font_path(font_name, weight="700")

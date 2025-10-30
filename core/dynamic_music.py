@@ -53,14 +53,21 @@ class DynamicMusicSelector:
         # This is updated weekly by Jamendo - you get fresh trending music without manual downloads
         jamendo = JamendoMusicAPI()
         
-        # Build better search tags based on mood and style
-        search_tags = [music_style, mood]
-        if music_style == 'minimalist' and mood == 'informative':
-            search_tags = ['ambient', 'background', 'calm', 'electronic']  # Better for informative content
-        elif mood == 'dramatic':
-            search_tags = ['cinematic', 'epic', 'dramatic', 'orchestral']
+        # IMPROVED: Better search tags based on mood and style for perfect matching
+        if mood == 'dramatic' or ('dark' in topic.lower()) or ('shocking' in topic.lower()):
+            search_tags = ['cinematic', 'epic', 'dramatic', 'orchestral', 'suspenseful', 'intense']
+        elif mood == 'energetic' or ('amazing' in topic.lower()) or ('incredible' in topic.lower()):
+            search_tags = ['energetic', 'upbeat', 'happy', 'electronic', 'pop', 'rock']
+        elif mood == 'serious' or ('medical' in topic.lower()):
+            search_tags = ['ambient', 'background', 'calm', 'minimalist', 'peaceful']
+        elif mood == 'mysterious':
+            search_tags = ['mysterious', 'ambient', 'electronic', 'dark', 'atmospheric']
+        elif music_style == 'minimalist' and mood == 'informative':
+            search_tags = ['ambient', 'background', 'calm', 'electronic', 'minimalist']
         elif mood == 'upbeat' or music_style == 'upbeat':
-            search_tags = ['energetic', 'upbeat', 'happy', 'electronic']
+            search_tags = ['energetic', 'upbeat', 'happy', 'electronic', 'pop']
+        else:
+            search_tags = [music_style, mood, 'background', 'ambient']
         
         jamendo_music = jamendo.search_music(genre=music_style, mood=mood, tags=search_tags)
         if jamendo_music:
