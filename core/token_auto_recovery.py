@@ -160,16 +160,16 @@ def update_replit_secret(token: str) -> bool:
     
     return False
 
-def auto_recover_token() -> bool:
+def auto_recover_token() -> Optional[str]:
     """
     Main auto-recovery function
     Attempts to regenerate token and update it
-    Returns True if successful
+    Returns the new token if successful, None otherwise
     """
     new_token = regenerate_token_auto()
     
     if not new_token:
-        return False
+        return None
     
     print()
     print("="*70)
@@ -183,7 +183,7 @@ def auto_recover_token() -> bool:
     if update_replit_secret(new_token):
         print("✅ Token updated automatically in Replit!")
         print("⚠️ Please restart your app for changes to take effect.")
-        return True
+        return new_token
     
     # Fallback: print instructions
     print("⚠️ Could not auto-update Replit secret.")
@@ -199,7 +199,7 @@ def auto_recover_token() -> bool:
     print()
     print("="*70)
     
-    return False
+    return new_token
 
 def update_config_token(new_token: str) -> bool:
     """

@@ -215,10 +215,11 @@ class YouTubeUploader:
                 try:
                     from core.token_auto_recovery import auto_recover_token, update_config_token
                     print("\nAttempting automatic token regeneration...")
-                    if auto_recover_token():
+                    new_token = auto_recover_token()
+                    if new_token:
                         print("\n✅ Token regenerated successfully!")
-                        # Try to update the token in memory so we can continue without restart
-                        if update_config_token(Config.YOUTUBE_REFRESH_TOKEN):
+                        # Update the token in memory with the NEW token
+                        if update_config_token(new_token):
                             print("✅ Token updated in memory - continuing upload...")
                             # Retry the upload with the new token
                             return self.upload_video(video_path, title, description, tags, category_id)
