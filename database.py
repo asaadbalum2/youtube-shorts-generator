@@ -253,7 +253,7 @@ class Database:
         """, (error_message[:500], video_id))  # Limit error message length
         
         conn.commit()
-        conn.close无声
+        conn.close()
     
     def get_failed_uploads(self, max_retries: int = 3) -> List[Dict]:
         """Get videos that failed to upload and need retry"""
