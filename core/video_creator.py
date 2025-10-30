@@ -560,21 +560,13 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
                 text_clip = text_clip.set_duration(5.0)
             
             # KINETIC ANIMATIONS - YouTube Shorts style
-            # Smooth fade in with slight scale animation
+            # Smooth fade in/out with modern feel
             text_clip = (text_clip
-                        .fadein(0.3)  # Fast fade in
-                        .fadeout(0.3)  # Fast fade out
-                        .set_start(0.1))
+                        .fadein(0.25)  # Fast, snappy fade in
+                        .fadeout(0.25)  # Fast fade out
+                        .set_start(0.05))  # Start immediately
             
-            # Add subtle position animation (kinetic effect)
-            # Slight upward movement for dynamic feel
-            def make_frame(t):
-                # Slight bounce effect
-                if t < 0.3:
-                    y_offset = int(10 * (1 - t/0.3))  # Start 10px lower, move up
-                else:
-                    y_offset = 0
-                return text_clip.set_position(('center', self.video_size[1] * 0.78 - y_offset))
+            print(f"✅ Text styled: {colors['text_color']} text, {colors['stroke_color']} outline (8px), ultra-bold font")
         except Exception as e:
             print(f"⚠️ Font error, using default: {e}")
             # Fallback - simple, clean styling with explicit duration
