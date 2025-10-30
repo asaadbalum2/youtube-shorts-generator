@@ -1,25 +1,22 @@
 # EXACT IMPLEMENTATION STEPS
 
-## ✅ STEP  unparalleled1: Get Free Music API Key (Freesound.org)
+## ✅ STEP 1: Download Free Music (YouTube Audio Library - 100% FREE, No API!)
 
-**What to do:**
-1. Open browser, go to: `https://freesound.org/help/developers/`
-2. Click the big button that says **"Apply for API access"**
-3. Fill out the form:
-   - Your name
-   - Email
-   - Project description: "YouTube Shorts video generation with background music"
-   - Accept terms
-4. Click **Submit**
-5. Check your email for API key (arrives in 1-2 hours usually)
-6. Copy the API key from email (looks like: `abc123def456...`)
-7. In Replit, click **"Secrets"** tab (left sidebar)
-8. Click **"+ New Secret"**
-9. Name: `FREESOUND_API_KEY`
-10. Value: Paste your API key
-11. Click **"Add Secret"**
+**READ THIS FIRST:**
+- ✅ **100% FREE** - No API keys, no subscriptions, no trials
+- ✅ Just download music files and organize in folders
+- ✅ See `docs/FREE_MUSIC_SETUP.md` for detailed instructions
 
-**Verify it worked:** Check Secrets tab shows `FREESOUND_API_KEY` exists
+**Quick steps:**
+1. Go to: `https://studio.youtube.com/` → **Audio Library** → **Free Music**
+2. Download 5-10 tracks for each style (upbeat, dramatic, ambient, etc.)
+3. In Replit, create folders: `assets/music/upbeat/`, `assets/music/dramatic/`, etc.
+4. Upload your downloaded music files to the appropriate folders
+5. Done! System automatically finds and uses them.
+
+**Detailed guide:** See `docs/FREE_MUSIC_SETUP.md` in the repo.
+
+**SKIP THIS STEP IF:** You want videos without music for now (they'll still work!)
 
 ---
 
@@ -36,7 +33,7 @@
 8. Click **"+ New Secret"**
 9. Name: `ELEVENLABS_API_KEY`
 10. Value: Paste your API key
-11. Click **"Add Secret"**
+11. Click **"Add Secret"`
 
 **Verify:** Secrets tab shows `ELEVENLABS_API_KEY`
 
@@ -75,6 +72,8 @@
 3. Wait for installation to complete (you'll see "Successfully installed...")
 4. If you see errors, copy the error message and tell me
 
+**Note:** Music uses YouTube Audio Library (no package needed - just download files!)
+
 ---
 
 ## ✅ STEP 5: Restart Your App
@@ -94,7 +93,7 @@
 2. Click **"⚡ Generate (No Upload)"** button
 3. Watch the Replit console for:
    - ✅ `ElevenLabs TTS generated` (or gTTS if ElevenLabs not configured)
-   - ✅ `Found YouTube Audio Library music在这儿` (if you added music files)
+   - ✅ `Found YouTube Audio Library music` (if you added music files)
    - ✅ `Background music added`
 4. If you see these messages, it's working!
 
@@ -110,6 +109,9 @@
 
 **Problem: "Module not found"**
 - Solution: Make sure you clicked Run after installing packages
+
+**Problem: "No music available"**
+- Solution: Music is optional. Videos work fine without it. To add music, see `docs/FREE_MUSIC_SETUP.md`
 
 ---
 
