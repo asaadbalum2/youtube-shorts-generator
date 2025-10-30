@@ -78,7 +78,7 @@ def regenerate_token_auto() -> Optional[str]:
             'code': auth_code,
             'client_id': client_id,
             'client_secret': client_secret,
-            'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob',
+            'redirect_uri': redirect_uri,  # Must match authorization URL!
             'grant_type': 'authorization_code'
         }
         
