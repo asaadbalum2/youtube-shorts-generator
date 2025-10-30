@@ -45,16 +45,19 @@ class JamendoMusicAPI:
             # Jamendo API search - use client_id parameter (required)
             # Free tier: https://developer.jamendo.com/ - no credit card, truly free
             client_id_to_use = self.client_id or self.api_key or '58c7c0f1'  # Use CLIENT_ID if set
+            # Prioritize TRENDING/VIRAL tracks automatically
+            # Jamendo automatically updates popularity_week - no manual downloads needed!
             params = {
                 'client_id': client_id_to_use,
                 'format': 'json',
-                'limit': 20,  # Get more results
+                'limit': 30,  # Get more results to find best trending track
                 'tags': '+'.join(search_tags[:3]) if search_tags else 'instrumental',
-                'order': 'popularity_week',  # Get trending/popular tracks
+                'order': 'popularity_week',  # AUTOMATIC trending tracks (updated weekly by Jamendo)
                 'audioformat': 'mp32',  # MP3 format
                 'imagesize': '200',
                 'speed': '0.8-1.2',  # Match tempo if possible
-                'boost': 'popularity_total'  # Boost by total popularity
+                'boost': 'popularity_total',  # Boost by total popularity
+                'datebetween': '2024-01-01_2025-12-31',  # Prefer recent tracks (more likely to be viral)
             }
             
             response = requests.get(f"{self.base_url}/tracks", params=params, timeout=10)
@@ -64,8 +67,11 @@ class JamendoMusicAPI:
                 tracks = data.get('results', [])
                 
                 if tracks:
-                    # Pick a random popular track
-                    track = random.choice(tracks)
+                    # Prioritize TOP trending tracks (first 5 are most popular this week)
+                    # Pick randomly from top 5 for variety, but prioritize trending
+                    top_tracks = tracks[:5] if len(tracks) >= 5 else tracks
+                    track = random.choice(top_tracks)
+                    print(f"🎵 Jamendo trending: '{track.get('name', 'Unknown')}' by {track.get('artist_name', 'Unknown')} (popularity_week rank)")
                     audio_url = track.get('audio', '')
                     
                     if audio_url:
