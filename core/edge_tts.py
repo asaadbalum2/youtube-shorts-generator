@@ -65,13 +65,38 @@ class EdgeTTS:
             else:  # casual, friendly, dramatic
                 voice = "en-US-JennyNeural"
             
-            # Run async function
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            success = loop.run_until_complete(
-                self._generate_speech_async(text, output_path, voice)
-            )
-            loop.close()
+            # Handle event loop properly (fix for FastAPI/async environments)
+            try:
+                # Check if there's a running event loop
+                loop = asyncio.get_running_loop()
+                # If we're in an async context, run in a new thread
+                import concurrent.futures
+                import threading
+                
+                def run_in_thread():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(
+                            self._generate_speech_async(text, output_path, voice)
+                        )
+                    finally:
+                        new_loop.close()
+                
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_in_thread)
+                    success = future.result(timeout=60)  # 60 second timeout
+                    
+            except RuntimeError:
+                # No running loop, create a new one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    success = loop.run_until_complete(
+                        self._generate_speech_async(text, output_path, voice)
+                    )
+                finally:
+                    loop.close()
             
             if success and os.path.exists(output_path):
                 return output_path
