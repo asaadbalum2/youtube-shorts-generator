@@ -31,7 +31,7 @@ class DynamicMusicSelector:
             "inspiring": []
         }
     
-    def get_music_for_content(self, analysis: Dict, duration: float) -> Optional[str]:
+    def get_music_for_content(self, analysis: Dict, duration: float, topic: str = "") -> Optional[str]:
         """
         Get music file path based on content analysis
         

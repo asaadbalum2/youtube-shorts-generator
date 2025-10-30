@@ -88,7 +88,7 @@ class VideoCreator:
         video_clips = self._create_high_quality_visuals(script, duration, topic, broll_media)
         
         # 6. Add background music (dynamic based on content)
-        music_path = self.music_selector.get_music_for_content(content_analysis, duration)
+        music_path = self.music_selector.get_music_for_content(content_analysis, duration, topic)
         if music_path:
             print(f"🎵 Music selected: {music_path}")
         else:
@@ -133,23 +133,27 @@ class VideoCreator:
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
         
-        # Try Edge TTS first (100% free, unlimited, high quality - Microsoft Edge TTS)
+        # CRITICAL: Use Edge TTS ONLY - American accent guaranteed, better rhythm
         try:
             from core.edge_tts import EdgeTTS
             edge_tts = EdgeTTS()
-            voice_style = analysis.get("voice_style", "casual")
+            voice_styleเกี่ยว = analysis.get("voice_style", "casual")
             
+            print(f"🎤 Generating audio with Edge TTS (voice style: {voice_style})")
             result = edge_tts.generate_speech(script, audio_path, voice_style)
-            if result:
+            
+            if result and os.path.exists(result):
+                print(f"✅ Edge TTS SUCCESS - American accent with dynamic rhythm")
                 return result
+            else:
+                raise Exception("Edge TTS failed - no audio file created")
         except ImportError:
-            print("⚠️ edge-tts not installed - install with: pip install edge-tts")
+            raise Exception("Edge TTS is required! Install: pip install edge-tts")
         except Exception as e:
-            print(f"⚠️ Edge TTS error: {e}")
-        
-        # Fallback to gTTS (forced American accent in dynamic_voice.py)
-        print("ℹ️ Using gTTS fallback - Edge TTS recommended for better quality")
-        return self.voice_selector.generate_speech(script, analysis, audio_path)
+            print(f"❌ Edge TTS failed: {e}")
+            import traceback
+            traceback.print_exc()
+            raise Exception(f"Edge TTS is required for proper accent. Error: {e}")
     
     def _fetch_broll_media(self, topic: str, duration: float, num_segments: int = 0) -> List[Dict]:
         """Fetch real b-roll images and videos from Pexels/Pixabay"""
@@ -463,15 +467,25 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
             "C:/Windows/Fonts/arial.ttf",  # Fallback to regular Arial
         ]
         
-        # Use Google Fonts Manager for high-quality, modern fonts
-        # YouTube Shorts style fonts: Bebas Neue (bold, modern) or Montserrat (clean, professional)
-        font_families = ["Bebas Neue", "Montserrat", "Poppins", "Roboto"]
-        font_name = font_families[index % len(font_families)]  # Rotate fonts for variety
+        # PRIORITIZE Google Fonts - modern YouTube Shorts style
+        font_families = ["Bebas Neue", "Montserrat", "Poppins", "Roboto", "Inter"]
+        font_name = font_families[index % len(font_famil Transformeries)]  # Rotate fonts
         
-        # Get font path (downloads if needed)
-        font_path = self.font_manager.get_font_path(font_name, weight="700")  # Bold weight
+        # Get font from Google Fonts (downloads if needed)
+        font_path = self.font_manager.get_font_path(font_name, weight="700")
         
-        print(f"📝 Using font: {font_name} (weight: 700)")
+        # Verify font exists, try alternatives if not
+        if not os.path.exists(font_path) or not font_path or font_path == "Arial-Bold":
+            print(f"⚠️ Font {font_name} not available, trying alternatives...")
+            for alt_font in font_families:
+                if alt_font != font_name:
+                    alt_path = self.font_manager.get_font_path(alt_font, weight="700")
+                    if alt_path and alt_path != "Arial-Bold" and os.path.exists(alt_path):
+                        font_path = alt_path
+                        font_name = alt_font
+                        break
+        
+        print(f"📝 Using font: {font_name} at {font_path}")
         
         font_size = 95  # Larger for YouTube Shorts (increased from 80)
         max_width = self.video_size[0] - 80  # Less margin for larger text
@@ -628,7 +642,24 @@ Return ONLY a JSON array of keywords: ["keyword1", "keyword2", ...]"""
             # Just voiceover
             final_video = final_video.set_audio(audio)
         
-        # Ensure exact duration
-        final_video = final_video.set_duration(min(duration, final_video.duration))
+        # CRITICAL FIX: Use audio duration, not video duration - prevent cutting off narration
+        # The video MUST match the audio exactly - don't cut it short!
+        audio_clip = AudioFileClip(audio_path)
+        actual_audio_duration = audio_clip.duration
+        
+        # Use the longer of the two - audio should be the master
+        final_duration = max(actual_audio_duration, duration)
+        
+        # If video is shorter than audio, extend last frame or loop
+        if final_video.duration < final_duration:
+            print(f"⚠️ Video ({final_video.duration:.1f}s) shorter than audio ({final_duration:.1f}s), extending...")
+            # Freeze last frame to match audio duration
+            last_frame = final_video.subclip(final_video.duration - 0.1)
+            extension = last_frame.set_duration(final_duration - final_video.duration)
+            final_video = concatenate_videoclips([final_video, extension])
+        
+        # Set exact duration to match audio
+        final_video = final_video.set_duration(final_duration)
+        print(f"✅ Final video duration: {final_duration:.1f}s (matches audio)")
         
         return final_video
