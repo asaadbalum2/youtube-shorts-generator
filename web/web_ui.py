@@ -266,18 +266,18 @@ async def test_groq():
         print("✅ ContentGenerator initialized")
         
         # Test with a simple prompt
-        test_prompt = "Write a short sentence about cats."
-        print(f"📝 Testing with prompt: {test_prompt}")
-        print("📝 Calling generate_content()...")
+        test_topic = "cats"
+        print(f"📝 Testing with topic: {test_topic}")
+        print("📝 Calling generate_video_content()...")
         
-        response = generator.generate_content(test_prompt, max_tokens=50)
-        print(f"📝 Response received: {response[:50] if response else 'None'}...")
+        response = generator.generate_video_content(test_topic)
+        print(f"📝 Response received: {str(response)[:50] if response else 'None'}...")
         
-        if response and len(response.strip()) > 0:
+        if response and response.get('script'):
             print("✅ Groq test successful")
             return {
                 "success": True,
-                "response": response.strip()[:100] + "..." if len(response) > 100 else response.strip(),
+                "response": response['script'][:100] + "..." if len(response['script']) > 100 else response['script'],
                 "message": "Groq API is working correctly"
             }
         else:
@@ -310,28 +310,26 @@ async def test_reddit():
         discoverer = TopicDiscoveryAgent()
         print("✅ TopicDiscoveryAgent initialized")
         
-        # Test with a simple subreddit search
-        test_subreddit = "AskReddit"
-        print(f"📝 Testing with subreddit: {test_subreddit}")
-        print("📝 Calling get_trending_posts()...")
+        # Test with trending topics discovery
+        print("📝 Testing trending topics discovery...")
+        print("📝 Calling discover_trending_topics()...")
         
-        posts = discoverer.get_trending_posts(test_subreddit, limit=3)
-        print(f"📝 Posts found: {len(posts) if posts else 0}")
+        topics = discoverer.discover_trending_topics()
+        print(f"📝 Topics found: {len(topics) if topics else 0}")
         
-        if posts and len(posts) > 0:
+        if topics and len(topics) > 0:
             print("✅ Reddit test successful")
             return {
                 "success": True,
-                "posts_found": len(posts),
-                "subreddit": test_subreddit,
-                "sample_titles": [post.get('title', 'No title')[:50] + "..." for post in posts[:2]],
+                "topics_found": len(topics),
+                "sample_topics": [topic.get('title', 'No title')[:50] + "..." for topic in topics[:2]],
                 "message": "Reddit API is working correctly"
             }
         else:
-            print("❌ No posts found or API connection failed")
+            print("❌ No topics found or API connection failed")
             return {
                 "success": False,
-                "error": "No posts found or API connection failed"
+                "error": "No topics found or API connection failed"
             }
             
     except Exception as e:

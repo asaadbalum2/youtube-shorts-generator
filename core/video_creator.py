@@ -52,8 +52,11 @@ class VideoCreator:
             fps=30,
             codec='libx264',
             audio_codec='aac',
-            preset='medium',
-            bitrate='5000k'
+            preset='slow',  # Better quality
+            bitrate='8000k',  # Higher bitrate
+            audio_bitrate='192k',  # Better audio quality
+            temp_audiofile='temp-audio.m4a',
+            remove_temp=True
         )
         
         # Cleanup
@@ -65,8 +68,9 @@ class VideoCreator:
         return output_path
     
     def _generate_audio(self, script: str) -> str:
-        """Generate TTS audio from script"""
-        tts = gTTS(text=script, lang='en', slow=False)
+        """Generate TTS audio from script with better quality"""
+        # Use slower, more natural speech
+        tts = gTTS(text=script, lang='en', slow=True)  # Slower for better quality
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
         tts.save(audio_path)
         return audio_path
@@ -110,8 +114,8 @@ class VideoCreator:
         
         # Try to load a font, fallback to default
         try:
-            # Try different font paths
-            font_sizes = [120, 100, 80, 60]
+            # Try different font paths with larger sizes
+            font_sizes = [140, 120, 100, 80]  # Larger fonts
             font = None
             for size in font_sizes:
                 try:
@@ -122,7 +126,11 @@ class VideoCreator:
                         font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size)
                         break
                     except:
-                        pass
+                        try:
+                            font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", size)
+                            break
+                        except:
+                            pass
             
             if not font:
                 font = ImageFont.load_default()
