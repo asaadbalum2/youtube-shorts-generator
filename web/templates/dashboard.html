@@ -372,7 +372,7 @@
                         <span style="color: #999;">Processing...</span>
                         {% if video.video_file_path %}
                         <br>
-                        <button onclick="downloadVideo({{ video.video_id|tojson }}, {{ video.title|tojson }})" 
+                        <button class="download-btn" data-video-id="{{ video.video_id }}" data-video-title="{{ video.title|replace('"', '&quot;') }}" 
                                 style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">
                             📥 Download Video
                         </button>
@@ -381,7 +381,7 @@
                         {% endif %}
                         {% endif %}
                         <br>
-                        <button onclick="deleteVideo({{ video.video_id|tojson }}, {{ video.title|tojson }})" 
+                        <button class="delete-btn" data-video-id="{{ video.video_id }}" data-video-title="{{ video.title|replace('"', '&quot;') }}" 
                                 style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">
                             🗑️ Delete Video
                         </button>
@@ -707,6 +707,52 @@
             .then(response => response.json())
             .then(data => console.log('🔧 Health check response:', data))
             .catch(error => console.error('🔧 Health check error:', error));
+        
+        // Add event listeners for download and delete buttons (after page load)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Download buttons
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const videoId = this.getAttribute('data-video-id');
+                    const title = this.getAttribute('data-video-title');
+                    downloadVideo(videoId, title);
+                });
+            });
+            
+            // Delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const videoId = this.getAttribute('data-video-id');
+                    const title = this.getAttribute('data-video-title');
+                    deleteVideo(videoId, title);
+                });
+            });
+        });
+        
+        // Also add listeners immediately (for dynamically loaded content)
+        setTimeout(function() {
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                if (!btn.hasAttribute('data-listener-added')) {
+                    btn.setAttribute('data-listener-added', 'true');
+                    btn.addEventListener('click', function() {
+                        const videoId = this.getAttribute('data-video-id');
+                        const title = this.getAttribute('data-video-title');
+                        downloadVideo(videoId, title);
+                    });
+                }
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                if (!btn.hasAttribute('data-listener-added')) {
+                    btn.setAttribute('data-listener-added', 'true');
+                    btn.addEventListener('click', function() {
+                        const videoId = this.getAttribute('data-video-id');
+                        const title = this.getAttribute('data-video-title');
+                        deleteVideo(videoId, title);
+                    });
+                }
+            });
+        }, 100);
         
         // Auto-refresh stats every 30 seconds
         setInterval(refreshStats, 30000);
