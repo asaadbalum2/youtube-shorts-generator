@@ -31,7 +31,7 @@ class Config:
     # Email Reporting
     EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "")
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")  # App password if Gmail
-    REPORT_RECIPIENT = os.getenv("REPORT_RECIPIENT", EMAIL_ADDRESS)
+    REPORT_RECIPIENT = os.getenv("REPORT_RECIPIENT", "asaadbalum2@gmail.com")
     
     # Video Settings
     MAX_TOPICS_TO_ANALYZE = 20

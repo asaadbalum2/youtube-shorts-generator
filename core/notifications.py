@@ -4,8 +4,8 @@ Handles token expiry warnings, viral video alerts, and quota notifications
 """
 import os
 import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from typing import Dict, List
 from core.config import Config

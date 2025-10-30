@@ -329,6 +329,12 @@
             <button class="btn" onclick="testToken()" style="margin-left: 10px; background: #17a2b8; color: #fff;">
                 🧪 Test Token
             </button>
+            <button class="btn" onclick="testGroq()" style="margin-left: 10px; background: #28a745; color: #fff;">
+                🤖 Test Groq
+            </button>
+            <button class="btn" onclick="testReddit()" style="margin-left: 10px; background: #ff6b35; color: #fff;">
+                🔴 Test Reddit
+            </button>
             <button class="btn" onclick="refreshStats()" style="margin-left: 10px;">
                 🔄 Refresh Stats
             </button>
@@ -479,6 +485,54 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🧪 Test Token';
+            }
+        }
+        
+        async function testGroq() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '🤖 Testing...';
+            
+            try {
+                const response = await fetch('/api/test-groq', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ Groq API is working!\n\nResponse: ${data.response}\n\nCost: Free (no quota)`);
+                } else {
+                    alert(`❌ Groq test failed!\n\nError: ${data.error}`);
+                }
+            } catch (error) {
+                alert('❌ Error testing Groq: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🤖 Test Groq';
+            }
+        }
+        
+        async function testReddit() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '🔴 Testing...';
+            
+            try {
+                const response = await fetch('/api/test-reddit', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ Reddit API is working!\n\nFound ${data.posts_found} posts\nSubreddit: ${data.subreddit}\n\nCost: Free (no quota)`);
+                } else {
+                    alert(`❌ Reddit test failed!\n\nError: ${data.error}`);
+                }
+            } catch (error) {
+                alert('❌ Error testing Reddit: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔴 Test Reddit';
             }
         }
         

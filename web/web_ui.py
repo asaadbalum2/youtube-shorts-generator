@@ -210,6 +210,70 @@ async def test_token():
             "error": f"Error testing token: {str(e)}"
         }
 
+@app.post("/api/test-groq")
+async def test_groq():
+    """Test Groq API connection"""
+    try:
+        from core.content_generator import ContentGenerator
+        
+        print("🤖 Testing Groq API connection...")
+        generator = ContentGenerator()
+        
+        # Test with a simple prompt
+        test_prompt = "Write a short sentence about cats."
+        response = generator.generate_content(test_prompt, max_tokens=50)
+        
+        if response and len(response.strip()) > 0:
+            return {
+                "success": True,
+                "response": response.strip()[:100] + "..." if len(response) > 100 else response.strip(),
+                "message": "Groq API is working correctly"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Empty response from Groq API"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error testing Groq API: {str(e)}"
+        }
+
+@app.post("/api/test-reddit")
+async def test_reddit():
+    """Test Reddit API connection"""
+    try:
+        from core.topic_discovery import TopicDiscoveryAgent
+        
+        print("🔴 Testing Reddit API connection...")
+        discoverer = TopicDiscoveryAgent()
+        
+        # Test with a simple subreddit search
+        test_subreddit = "AskReddit"
+        posts = discoverer.get_trending_posts(test_subreddit, limit=3)
+        
+        if posts and len(posts) > 0:
+            return {
+                "success": True,
+                "posts_found": len(posts),
+                "subreddit": test_subreddit,
+                "sample_titles": [post.get('title', 'No title')[:50] + "..." for post in posts[:2]],
+                "message": "Reddit API is working correctly"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "No posts found or API connection failed"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error testing Reddit API: {str(e)}"
+        }
+
 @app.get("/api/health")
 async def health():
     """Health check endpoint"""
