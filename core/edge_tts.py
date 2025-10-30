@@ -26,16 +26,33 @@ class EdgeTTS:
     def __init__(self):
         self.voice = "en-US-JennyNeural"  # Default: friendly female American voice
     
-    async def _generate_speech_async(self, text: str, output_path: str, voice: str = None) -> bool:
-        """Generate speech asynchronously"""
+    async def _generate_speech_async(self, text: str, output_path: str, voice: str = None, rate: str = "+0%", pitch: str = "+0Hz") -> bool:
+        """Generate speech asynchronously with SSML for rhythm control"""
         try:
             voice_to_use = voice or self.voice
             
-            communicate = edge_tts.Communicate(text, voice_to_use)
-            await communicate.save(output_path)
+            # Use SSML for better rhythm and pace control
+            # This makes narration more interesting and dynamic
+            ssml_text = f"""<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+                <voice name="{voice_to_use}">
+                    <prosody rate="{rate}" pitch="{pitch}">
+                        {text}
+                    </prosody>
+                </voice>
+            </speak>"""
             
-            print(f"✅ Edge TTS generated: {voice_to_use}")
-            return True
+            try:
+                communicate = edge_tts.Communicate(ssml_text, voice_to_use)
+                await communicate.save(output_path)
+                print(f"✅ Edge TTS generated with SSML: {voice_to_use} (rate={rate}, pitch={pitch})")
+                return True
+            except Exception as ssml_error:
+                # Fallback to simple text if SSML fails
+                print(f"⚠️ SSML failed: {ssml_error}, trying simple text...")
+                communicate = edge_tts.Communicate(text, voice_to_use)
+                await communicate.save(output_path)
+                print(f"✅ Edge TTS generated (simple): {voice_to_use}")
+                return True
         except Exception as e:
             print(f"❌ Edge TTS error: {e}")
             return False
