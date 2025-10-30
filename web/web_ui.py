@@ -154,6 +154,40 @@ async def get_stats():
     except Exception as e:
         return {"error": str(e), "today": {"created": 0, "uploaded": 0, "views": 0, "likes": 0}}
 
+@app.post("/api/refresh-token")
+async def refresh_token():
+    """Manually refresh YouTube token"""
+    try:
+        from core.token_auto_recovery import regenerate_token_auto, update_config_token
+        
+        print("🔄 Manual token refresh requested via dashboard...")
+        new_token = regenerate_token_auto()
+        
+        if new_token:
+            # Update token in memory
+            if update_config_token(new_token):
+                return {
+                    "status": "success",
+                    "message": "Token refreshed successfully! Updated in memory.",
+                    "token_preview": f"{new_token[:20]}...{new_token[-10:]}"
+                }
+            else:
+                return {
+                    "status": "partial_success",
+                    "message": "Token generated but couldn't update in memory. Please restart app.",
+                    "token_preview": f"{new_token[:20]}...{new_token[-10:]}"
+                }
+        else:
+            return {
+                "status": "error",
+                "message": "Failed to generate new token. Check logs for details."
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error refreshing token: {str(e)}"
+        }
+
 @app.get("/api/health")
 async def health():
     """Health check endpoint"""

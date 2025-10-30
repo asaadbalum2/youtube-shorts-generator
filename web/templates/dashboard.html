@@ -323,6 +323,9 @@
             <button class="btn" onclick="retryFailedUpload()" style="margin-left: 10px;">
                 🔄 Retry Failed Upload
             </button>
+            <button class="btn" onclick="refreshToken()" style="margin-left: 10px; background: #ffc107; color: #000;">
+                🔑 Refresh YouTube Token
+            </button>
             <button class="btn" onclick="refreshStats()" style="margin-left: 10px;">
                 🔄 Refresh Stats
             </button>
@@ -425,6 +428,30 @@
                 alert('Error retrying upload: ' + error.message);
             } finally {
                 btn.disabled = false;
+            }
+        }
+        
+        async function refreshToken() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '🔄 Refreshing...';
+            
+            try {
+                const response = await fetch('/api/refresh-token', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert('✅ Token refreshed successfully! You have 7+ days before next refresh needed.');
+                } else {
+                    alert('❌ Error: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error refreshing token: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔑 Refresh YouTube Token';
             }
         }
         

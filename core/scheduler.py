@@ -8,6 +8,7 @@ from datetime import datetime, date
 import time
 from typing import Callable
 from core.config import Config
+from core.notifications import NotificationManager
 
 class VideoScheduler:
     def __init__(self, generation_callback: Callable):
@@ -20,6 +21,7 @@ class VideoScheduler:
         self.scheduler = BackgroundScheduler()
         self.generation_callback = generation_callback
         self.videos_per_day = Config.VIDEOS_PER_DAY
+        self.notifications = NotificationManager()
     
     def start(self):
         """Start the scheduler with randomized posting times (prevents YouTube spam detection)"""
@@ -54,6 +56,21 @@ class VideoScheduler:
             
             print(f"Scheduled video generation #{i+1} at {hour:02d}:{minute:02d} daily (randomized to prevent spam detection)")
         
+        # Add daily email report (if configured)
+        if Config.EMAIL_ADDRESS and Config.EMAIL_PASSWORD:
+            self.scheduler.add_job(
+                self._send_daily_report,
+                CronTrigger(hour=21, minute=0),  # 9 PM daily
+                id='daily_email_report'
+            )
+            
+            # Add daily notification checks
+            self.scheduler.add_job(
+                self._run_notifications,
+                CronTrigger(hour=20, minute=30),  # 8:30 PM daily
+                id='daily_notifications'
+            )
+        
         self.scheduler.start()
         print("Scheduler started - videos will be generated automatically at randomized times")
     
@@ -77,6 +94,22 @@ class VideoScheduler:
     def stop(self):
         """Stop the scheduler"""
         self.scheduler.shutdown()
+    
+    def _send_daily_report(self):
+        """Send daily email report"""
+        try:
+            from core.email_reporter import EmailReporter
+            reporter = EmailReporter()
+            reporter.send_daily_report()
+        except Exception as e:
+            print(f"Error sending daily report: {e}")
+    
+    def _run_notifications(self):
+        """Run daily notification checks"""
+        try:
+            self.notifications.run_daily_checks()
+        except Exception as e:
+            print(f"Error running notifications: {e}")
     
     def update_videos_per_day(self, count: int):
         """Update number of videos per day"""

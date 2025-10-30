@@ -11,6 +11,7 @@ from googleapiclient.http import MediaFileUpload
 import pickle
 from typing import Dict, Optional
 from core.config import Config
+from core.quota_manager import QuotaManager
 
 # YouTube API scopes
 # YouTube API scopes - need both upload and basic read access
@@ -23,6 +24,7 @@ class YouTubeUploader:
     def __init__(self):
         self.service = None
         self.credentials = None
+        self.quota_manager = QuotaManager()
         self._authenticate()
     
     def _authenticate(self, retry=False):
@@ -91,6 +93,14 @@ class YouTubeUploader:
         """
         if not self.service:
             raise ValueError("YouTube service not initialized")
+        
+        # Check quota before attempting upload
+        if not self.quota_manager.can_upload():
+            usage = self.quota_manager.get_quota_usage_estimate()
+            raise Exception(f"Quota exceeded: {usage['percentage']:.1f}% used. Cannot upload safely.")
+        
+        # Log quota usage
+        self.quota_manager.log_quota_usage("upload_attempt", self.quota_manager.upload_cost)
         
         try:
             # Prepare metadata
