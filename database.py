@@ -260,10 +260,13 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
+        # Get videos that failed or haven't been uploaded yet (have file but no URL)
         cursor.execute("""
             SELECT video_id, title, description, topic, video_file_path, retry_count, upload_error
             FROM videos
-            WHERE status = 'upload_failed' AND retry_count < ?
+            WHERE (status = 'upload_failed' OR (status != 'uploaded' AND youtube_url IS NULL))
+                AND retry_count < ?
+                AND video_file_path IS NOT NULL
             ORDER BY created_at ASC
         """, (max_retries,))
         
