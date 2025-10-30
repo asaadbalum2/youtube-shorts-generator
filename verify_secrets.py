@@ -12,12 +12,29 @@ load_dotenv()
 def verify_groq():
     """Verify Groq API key"""
     api_key = os.getenv('GROQ_API_KEY', '')
-    if not api_key or api_key.startswith('your_'):
+    
+    if not api_key:
+        return False, "Not set or empty"
+    
+    # Strip whitespace (common issue)
+    api_key = api_key.strip()
+    
+    # Debug info (first/last chars only)
+    if api_key:
+        masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+        print(f"  Debug: Key loaded: {masked} (length: {len(api_key)})")
+    
+    if api_key.startswith('your_'):
         return False, "Not set or placeholder"
+    
+    if not api_key.startswith('gsk_'):
+        return False, f"Invalid format (should start with 'gsk_')"
     
     try:
         from groq import Groq
+        print(f"  Debug: Creating Groq client...")
         client = Groq(api_key=api_key)
+        print(f"  Debug: Making API call...")
         # Test API with simple request
         response = client.chat.completions.create(
             model="mixtral-8x7b-32768",
@@ -25,14 +42,22 @@ def verify_groq():
             max_tokens=10
         )
         if response.choices[0].message.content:
+            print(f"  Debug: API call succeeded!")
             return True, "Valid"
+        return False, "API call succeeded but no content"
     except Exception as e:
         error = str(e)
-        if "401" in error or "invalid" in error.lower():
-            return False, "Invalid API key"
-        return False, f"Error: {error[:50]}"
-    
-    return False, "Unknown error"
+        print(f"  Debug: Error occurred: {type(e).__name__}")
+        print(f"  Debug: Error message: {error}")
+        
+        if "401" in error or "unauthorized" in error.lower():
+            return False, f"Invalid API key (401 Unauthorized) - Check if key is correct in Replit Secrets"
+        if "invalid" in error.lower() and "api" in error.lower():
+            return False, f"Invalid API key: {error[:80]}"
+        if "rate limit" in error.lower():
+            return False, f"Rate limited: {error[:50]}"
+        
+        return False, f"Error: {error[:80]}"
 
 def verify_reddit():
     """Verify Reddit credentials"""
