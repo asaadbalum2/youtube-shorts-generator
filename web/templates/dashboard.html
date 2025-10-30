@@ -326,6 +326,9 @@
             <button class="btn" onclick="refreshToken()" style="margin-left: 10px; background: #ffc107; color: #000;">
                 🔑 Refresh YouTube Token
             </button>
+            <button class="btn" onclick="testToken()" style="margin-left: 10px; background: #17a2b8; color: #fff;">
+                🧪 Test Token
+            </button>
             <button class="btn" onclick="refreshStats()" style="margin-left: 10px;">
                 🔄 Refresh Stats
             </button>
@@ -452,6 +455,30 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🔑 Refresh YouTube Token';
+            }
+        }
+        
+        async function testToken() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '🧪 Testing...';
+            
+            try {
+                const response = await fetch('/api/test-token', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.valid) {
+                    alert(`✅ Token is working!\n\nChannel ID: ${data.channel_id}\nMessage: ${data.message}\n\nCost: 1 quota unit (minimal test)`);
+                } else {
+                    alert(`❌ Token test failed!\n\nError: ${data.error}\n\nYou may need to refresh the token.`);
+                }
+            } catch (error) {
+                alert('❌ Error testing token: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🧪 Test Token';
             }
         }
         

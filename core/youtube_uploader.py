@@ -99,6 +99,10 @@ class YouTubeUploader:
             usage = self.quota_manager.get_quota_usage_estimate()
             raise Exception(f"Quota exceeded: {usage['percentage']:.1f}% used. Cannot upload safely.")
         
+        # Check token validity without consuming quota
+        if not self._is_token_valid():
+            raise Exception("YouTube token is invalid or expired. Please refresh token before uploading.")
+        
         # Log quota usage
         self.quota_manager.log_quota_usage("upload_attempt", self.quota_manager.upload_cost)
         
@@ -277,6 +281,48 @@ class YouTubeUploader:
             logging.error(f"YouTube upload error: {e}", exc_info=True)
             
             raise
+    
+    def _is_token_valid(self) -> bool:
+        """Check if token is valid without consuming quota"""
+        try:
+            if not self.credentials or not self.credentials.valid:
+                return False
+            
+            # Check if token is expired
+            if self.credentials.expired:
+                return False
+            
+            # Check if we have a refresh token
+            if not self.credentials.refresh_token:
+                return False
+            
+            return True
+        except Exception as e:
+            print(f"Error checking token validity: {e}")
+            return False
+    
+    def test_token_connection(self) -> Dict:
+        """Test token connection with minimal quota usage"""
+        try:
+            if not self.service:
+                return {"valid": False, "error": "Service not initialized"}
+            
+            # Use a very low-cost API call to test connection
+            # This costs only 1 unit (vs 1600 for upload)
+            request = self.service.channels().list(part='id', mine=True)
+            response = request.execute()
+            
+            if response.get('items'):
+                return {
+                    "valid": True,
+                    "channel_id": response['items'][0]['id'],
+                    "message": "Token is valid and working"
+                }
+            else:
+                return {"valid": False, "error": "No channel found"}
+                
+        except Exception as e:
+            return {"valid": False, "error": str(e)}
     
     def get_channel_id(self) -> Optional[str]:
         """Get YouTube channel ID"""

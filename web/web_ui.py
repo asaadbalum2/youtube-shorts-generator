@@ -188,6 +188,28 @@ async def refresh_token():
             "message": f"Error refreshing token: {str(e)}"
         }
 
+@app.post("/api/test-token")
+async def test_token():
+    """Test YouTube token connection with minimal quota usage"""
+    try:
+        from core.youtube_uploader import YouTubeUploader
+        
+        print("🧪 Testing YouTube token connection...")
+        uploader = YouTubeUploader()
+        result = uploader.test_token_connection()
+        
+        # Log the test (1 unit cost)
+        if uploader.quota_manager:
+            uploader.quota_manager.log_quota_usage("token_test", 1)
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "valid": False,
+            "error": f"Error testing token: {str(e)}"
+        }
+
 @app.get("/api/health")
 async def health():
     """Health check endpoint"""

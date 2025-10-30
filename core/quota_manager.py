@@ -183,6 +183,77 @@ class QuotaManager:
             print(f"Error getting quota history: {e}")
             return []
     
+    def send_history_email(self, days: int = 7) -> bool:
+        """Send quota history via email before cleanup"""
+        try:
+            from core.notifications import NotificationManager
+            notifications = NotificationManager()
+            
+            history = self.get_quota_history(days)
+            
+            if not history:
+                return True  # No history to send
+            
+            subject = f"Quota History Report ({days} days)"
+            body = f"""
+            <h2>📊 YouTube API Quota History Report</h2>
+            <p>This data will be cleaned up from the database. Here's the {days}-day history:</p>
+            
+            <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
+                <tr style="background: #f5f5f5;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Total Cost</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Operations</th>
+                </tr>
+            """
+            
+            for day in history:
+                body += f"""
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{day['date']}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{day['total_cost']:,} units</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">{day['operations']}</td>
+                </tr>
+                """
+            
+            body += """
+            </table>
+            
+            <p><strong>Note:</strong> This data has been archived and will be removed from the database to save space.</p>
+            """
+            
+            return notifications.send_email_notification(subject, body)
+            
+        except Exception as e:
+            print(f"Error sending history email: {e}")
+            return False
+    
+    def cleanup_old_history(self, keep_days: int = 7) -> bool:
+        """Clean up old quota history after sending email backup"""
+        try:
+            # Send email backup first
+            self.send_history_email(keep_days)
+            
+            # Clean up old data
+            conn = self.db.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                DELETE FROM quota_logs 
+                WHERE timestamp < datetime('now', '-{} days')
+            """.format(keep_days))
+            
+            deleted_count = cursor.rowcount
+            conn.commit()
+            conn.close()
+            
+            print(f"Cleaned up {deleted_count} old quota log entries")
+            return True
+            
+        except Exception as e:
+            print(f"Error cleaning up history: {e}")
+            return False
+    
     def optimize_upload_schedule(self) -> Dict:
         """Optimize upload schedule based on quota usage"""
         usage = self.get_quota_usage_estimate()
