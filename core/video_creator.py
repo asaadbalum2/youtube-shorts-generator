@@ -461,8 +461,8 @@ class VideoCreator:
         new_w = int(w * scale)
         new_h = int(h * scale)
         
-        # Use high-quality resize with lanczos algorithm for crispness
-        clip = clip.resize((new_w, new_h), method='lanczos')
+        # Use high-quality resize (MoviePy uses good default algorithm)
+        clip = clip.resize((new_w, new_h))
         
         # Crop to exact size if needed
         if new_w > target_w or new_h > target_h:

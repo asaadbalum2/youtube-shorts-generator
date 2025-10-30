@@ -120,7 +120,6 @@ Format your response as JSON:
                 video_content = json.loads(content)
             except json.JSONDecodeError as e:
                 # Try to extract JSON if it's wrapped in text
-                import json
                 json_match = re.search(r'\{.*\}', content, re.DOTALL)
                 if json_match:
                     try:

@@ -85,7 +85,8 @@ class TopicDiscoveryAgent:
         topics = []
         
         if not self.reddit:
-            print("⚠️ Reddit not available, skipping Reddit trends")
+            # Reddit not available - this is OK, we use AI generation as primary source
+            pass
             return topics
         
         try:
