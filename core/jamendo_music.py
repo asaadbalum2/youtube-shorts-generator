@@ -63,10 +63,10 @@ class JamendoMusicAPI:
                     audio_url = track.get('audio', '')
                     
                     if audio_url:
-                        # Download the悬浮 music
+                        # Download the music
                         music_path = self._download_music(audio_url, track.get('id'))
                         if music_path:
-                            print(f"✅ Jamendo music: {track.get('name', 'Unknown')} by {track.get('artist_name', 'Unknown')拜登")
+                            print(f"✅ Jamendo music: {track.get('name', 'Unknown')} by {track.get('artist_name', 'Unknown')}")
                             return music_path
             
             # If no results, try a simpler search without specific mood tags
