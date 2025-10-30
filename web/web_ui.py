@@ -14,6 +14,7 @@ from datetime import datetime, date
 import json
 from core.config import Config
 from core.database import Database
+import os
 
 app = FastAPI(title="YouTube Shorts Generator Dashboard")
 
@@ -59,6 +60,9 @@ async def dashboard(request: Request):
         # Most watched topics
         most_watched_topics = db_conn.get_most_watched_topics(limit=5)
         
+        # Get quota information
+        quota_info = get_quota_info()
+        
         # Recent videos (last 20)
         db = sqlite3.connect(Config.DATABASE_PATH)
         cursor = db.cursor()
@@ -101,7 +105,8 @@ async def dashboard(request: Request):
             "most_watched_videos": most_watched_videos,
             "most_watched_topics": most_watched_topics,
             "recent_videos": recent_videos,
-            "videos_per_day": Config.VIDEOS_PER_DAY
+            "videos_per_day": Config.VIDEOS_PER_DAY,
+            "quota_info": quota_info
         })
         
         print(f"DEBUG: Template response created successfully")
@@ -157,3 +162,69 @@ async def health():
         "videos_per_day": Config.VIDEOS_PER_DAY,
         "timestamp": datetime.now().isoformat()
     }
+
+def get_quota_info():
+    """Get YouTube API quota information"""
+    try:
+        # Default quota is 10,000 units per day
+        DEFAULT_QUOTA = 10000
+        
+        # Estimate quota usage based on database operations
+        # Each upload attempt uses ~1600 units, each auth refresh uses ~1 unit
+        db_conn = Database()
+        
+        # Count upload attempts (successful and failed)
+        db = sqlite3.connect(Config.DATABASE_PATH)
+        cursor = db.cursor()
+        
+        try:
+            # Count videos that were attempted to upload
+            cursor.execute("""
+                SELECT COUNT(*) FROM videos 
+                WHERE status IN ('uploaded', 'upload_failed', 'processing')
+            """)
+            upload_attempts = cursor.fetchone()[0] or 0
+            
+            # Each upload attempt costs ~1600 units
+            # Each authentication refresh costs ~1 unit (we'll estimate 5 per video attempt)
+            estimated_used = (upload_attempts * 1600) + (upload_attempts * 5)
+            
+            # Cap at quota limit
+            estimated_used = min(estimated_used, DEFAULT_QUOTA)
+            estimated_remaining = max(0, DEFAULT_QUOTA - estimated_used)
+            quota_percentage = (estimated_used / DEFAULT_QUOTA) * 100
+            
+        except sqlite3.OperationalError:
+            estimated_used = 0
+            estimated_remaining = DEFAULT_QUOTA
+            quota_percentage = 0
+        finally:
+            db.close()
+        
+        # Check if we have a recent quota error in logs (if possible)
+        # This is an estimate - actual quota is only visible in Google Cloud Console
+        quota_status = "healthy"
+        if quota_percentage > 90:
+            quota_status = "critical"
+        elif quota_percentage > 70:
+            quota_status = "warning"
+        
+        return {
+            "estimated_used": estimated_used,
+            "estimated_remaining": estimated_remaining,
+            "quota_limit": DEFAULT_QUOTA,
+            "percentage_used": round(quota_percentage, 1),
+            "status": quota_status,
+            "quota_console_url": "https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas",
+            "note": "This is an estimate. Check Google Cloud Console for exact usage."
+        }
+    except Exception as e:
+        return {
+            "estimated_used": 0,
+            "estimated_remaining": 10000,
+            "quota_limit": 10000,
+            "percentage_used": 0,
+            "status": "unknown",
+            "quota_console_url": "https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas",
+            "note": f"Error calculating quota: {str(e)}"
+        }

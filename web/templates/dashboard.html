@@ -216,6 +216,64 @@
             </div>
         </div>
         
+        <!-- Quota Information Section -->
+        <div class="quota-section" style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h2 style="margin-top: 0; color: #667eea;">📊 YouTube API Quota</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Used (Estimate)</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #333;">{{ "{:,}".format(quota_info.estimated_used) }}</div>
+                    <div style="font-size: 11px; color: #999;">units</div>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Remaining (Estimate)</div>
+                    <div style="font-size: 24px; font-weight: bold; 
+                        {% if quota_info.status == 'critical' %}color: #dc3545;
+                        {% elif quota_info.status == 'warning' %}color: #ffc107;
+                        {% else %}color: #28a745;{% endif %}">
+                        {{ "{:,}".format(quota_info.estimated_remaining) }}
+                    </div>
+                    <div style="font-size: 11px; color: #999;">units</div>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Daily Limit</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #333;">{{ "{:,}".format(quota_info.quota_limit) }}</div>
+                    <div style="font-size: 11px; color: #999;">units/day</div>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Usage %</div>
+                    <div style="font-size: 24px; font-weight: bold; 
+                        {% if quota_info.status == 'critical' %}color: #dc3545;
+                        {% elif quota_info.status == 'warning' %}color: #ffc107;
+                        {% else %}color: #28a745;{% endif %}">
+                        {{ quota_info.percentage_used }}%
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 8px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ quota_info.percentage_used }}%; 
+                            {% if quota_info.status == 'critical' %}background: #dc3545;
+                            {% elif quota_info.status == 'warning' %}background: #ffc107;
+                            {% else %}background: #28a745;{% endif %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 13px; color: #1976d2;">
+                <strong>ℹ️ Note:</strong> {{ quota_info.note }} 
+                <a href="{{ quota_info.quota_console_url }}" target="_blank" style="color: #1976d2; text-decoration: underline; margin-left: 5px;">
+                    View exact quota in Google Cloud Console →
+                </a>
+            </div>
+            {% if quota_info.status == 'critical' %}
+            <div style="margin-top: 10px; padding: 10px; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 5px; color: #c62828;">
+                ⚠️ <strong>Quota Critical!</strong> You've used over 90% of your daily quota. Wait for daily reset or request an increase.
+            </div>
+            {% elif quota_info.status == 'warning' %}
+            <div style="margin-top: 10px; padding: 10px; background: #fff3e0; border: 1px solid #ffcc02; border-radius: 5px; color: #e65100;">
+                ⚠️ <strong>Quota Warning:</strong> You've used over 70% of your daily quota.
+            </div>
+            {% endif %}
+        </div>
+        
         {% if most_watched_videos %}
         <div class="videos-section" style="margin-bottom: 20px;">
             <h2>🔥 Most Watched Videos</h2>
