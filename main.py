@@ -305,6 +305,8 @@ class YouTubeShortsGenerator:
                         "videos_per_day": Config.VIDEOS_PER_DAY,
                         "endpoints": {
                             "generate": "POST /generate - Trigger manual video generation",
+                            "retry_upload": "POST /retry-upload - Retry failed upload",
+                            "failed_uploads": "GET /failed-uploads - List failed uploads",
                             "health": "GET /health - Check system health"
                         }
                     }
@@ -328,6 +330,48 @@ class YouTubeShortsGenerator:
                         }
                     except Exception as e:
                         logger.error(f"Manual generation error: {e}")
+                        return {"status": "error", "message": str(e)}
+                
+                @app.post("/retry-upload")
+                def retry_failed_upload():
+                    """Retry uploading a failed video"""
+                    try:
+                        logger.info("Manual retry of failed upload triggered via API")
+                        import threading
+                        def retry_async():
+                            self.retry_failed_upload()
+                        
+                        thread = threading.Thread(target=retry_async, daemon=True)
+                        thread.start()
+                        
+                        return {
+                            "status": "success",
+                            "message": "Retry upload started in background - check logs for progress"
+                        }
+                    except Exception as e:
+                        logger.error(f"Retry upload error: {e}")
+                        return {"status": "error", "message": str(e)}
+                
+                @app.get("/failed-uploads")
+                def get_failed_uploads():
+                    """Get list of failed uploads"""
+                    try:
+                        failed = self.db.get_failed_uploads(max_retries=10)
+                        return {
+                            "status": "success",
+                            "count": len(failed),
+                            "failed_uploads": [
+                                {
+                                    "video_id": v['video_id'],
+                                    "title": v['title'],
+                                    "topic": v['topic'],
+                                    "retry_count": v['retry_count'],
+                                    "error": v['upload_error'][:100] if v['upload_error'] else ""
+                                }
+                                for v in failed
+                            ]
+                        }
+                    except Exception as e:
                         return {"status": "error", "message": str(e)}
                 
                 @app.get("/health")

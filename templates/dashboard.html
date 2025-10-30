@@ -205,6 +205,9 @@
             <button class="btn" onclick="triggerGeneration()">
                 🎬 Generate Video Now
             </button>
+            <button class="btn" onclick="retryFailedUpload()" style="margin-left: 10px;">
+                🔄 Retry Failed Upload
+            </button>
             <button class="btn" onclick="refreshStats()" style="margin-left: 10px;">
                 🔄 Refresh Stats
             </button>
@@ -284,6 +287,29 @@
                 setTimeout(() => location.reload(), 1000);
             } catch (error) {
                 console.error('Error refreshing stats:', error);
+            }
+        }
+        
+        async function retryFailedUpload() {
+            const btn = event.target;
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/../retry-upload', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert('Retry upload started! Check logs for progress.');
+                    setTimeout(refreshStats, 10000);
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error retrying upload: ' + error.message);
+            } finally {
+                btn.disabled = false;
             }
         }
         
