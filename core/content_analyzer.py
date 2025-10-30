@@ -83,9 +83,12 @@ Return JSON format:
                 return self._fallback_analysis(topic, script)
             
             # Clean invalid control characters MORE AGGRESSIVELY
+            # Remove ALL control characters and non-printable characters
             content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
-            # Also remove any remaining control chars
-            content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
+            # Only keep printable characters and newlines/tabs
+            content = ''.join(char for char in content if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+            # Remove invalid escape sequences
+            content = content.encode('utf-8', errors='ignore').decode('utf-8')
             
             # Check again after cleaning
             if not content or not content.strip():
@@ -120,8 +123,10 @@ Return JSON format:
                     if end_idx > start_idx:
                         json_str = content[start_idx:end_idx]
                         try:
-                            # Clean the extracted JSON
+                            # Clean the extracted JSON MORE AGGRESSIVELY
                             json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
+                            json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+                            json_str = json_str.encode('utf-8', errors='ignore').decode('utf-8')
                             analysis = json.loads(json_str)
                             print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
                             return analysis

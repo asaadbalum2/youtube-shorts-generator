@@ -118,9 +118,12 @@ Format your response as JSON:
                 return self._generate_fallback_content(topic)
             
             # Clean invalid control characters MORE AGGRESSIVELY
+            # Remove ALL control characters and non-printable characters
             content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
-            # Also remove any remaining control chars
-            content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
+            # Only keep printable characters and newlines/tabs
+            content = ''.join(char for char in content if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+            # Remove invalid escape sequences
+            content = content.encode('utf-8', errors='ignore').decode('utf-8')
             
             # Check again after cleaning - if empty, use fallback
             if not content or not content.strip():
@@ -152,12 +155,18 @@ Format your response as JSON:
                     if end_idx > start_idx:
                         json_str = content[start_idx:end_idx]
                         try:
-                            # Clean extracted JSON
+                            # Clean extracted JSON MORE AGGRESSIVELY
+                            # Remove ALL control characters
                             json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
+                            # Also remove any non-printable characters
+                            json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t' or ord(char) >= 32)
+                            # Remove invalid escape sequences
+                            json_str = json_str.encode('utf-8', errors='ignore').decode('utf-8')
                             video_content = json.loads(json_str)
                             print(f"✅ JSON extracted successfully from wrapped text")
                         except Exception as extract_error:
                             print(f"⚠️ Failed to parse extracted JSON: {extract_error}")
+                            print(f"⚠️ Extracted JSON (first 500 chars): {json_str[:500]}")
                             # Use fallback
                             return self._generate_fallback_content(topic)
                 else:
