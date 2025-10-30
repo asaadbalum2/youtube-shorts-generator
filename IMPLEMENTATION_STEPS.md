@@ -38,7 +38,7 @@
 10. Value: Paste your API key
 11. Click **"Add Secret"**
 
-**Verify:** Secrets tab shows both `FREESOUND_API_KEY` and `ELEVENLABS_API_KEY`
+**Verify:** Secrets tab shows `ELEVENLABS_API_KEY`
 
 ---
 
@@ -93,8 +93,8 @@
 1. Go to your dashboard: `https://your-replit-url.replit.dev/dashboard`
 2. Click **"⚡ Generate (No Upload)"** button
 3. Watch the Replit console for:
-   - ✅ `Freesound API authenticated` 
-   - ✅ `ElevenLabs TTS generated`
+   - ✅ `ElevenLabs TTS generated` (or gTTS if ElevenLabs not configured)
+   - ✅ `Found YouTube Audio Library music在这儿` (if you added music files)
    - ✅ `Background music added`
 4. If you see these messages, it's working!
 
@@ -102,10 +102,7 @@
 
 ## ❓ TROUBLESHOOTING
 
-**Problem: "FREESOUND_API_KEY not configured"**
-- Solution: Double-check you added it in Secrets tab, spelled exactly: `FREESOUND_API_KEY`
-
-**Problem: "ELEVENLABS_API_KEY loss configured"**  
+**Problem: "ELEVENLABS_API_KEY not configured"**  
 - Solution: Check Secrets tab, name must be exactly: `ELEVENLABS_API_KEY`
 
 **Problem: Packages won't install**
@@ -119,9 +116,10 @@
 ## 📋 CHECKLIST
 
 Before saying "done", verify:
-- [ ] Freesound API key added to Secrets
-- [ ] ElevenLabs API key added to Secrets  
-- [ ] Hugging Face token added to Secrets
+- [ ] Music downloaded from YouTube Audio Library (optional but recommended)
+- [ ] Music organized in `assets/music/{style}/` folders (optional)
+- [ ] ElevenLabs API key added to Secrets (optional - gTTS works as fallback)
+- [ ] Hugging Face token added to Secrets (optional - for AI image generation)
 - [ ] Packages installed (`requests elevenlabs huggingface_hub`)
 - [ ] App restarted
 - [ ] Test video generation works

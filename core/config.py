@@ -39,9 +39,9 @@ class Config:
     PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
     
     # Advanced APIs (Free tiers)
-    FREESOUND_API_KEY = os.getenv("FREESOUND_API_KEY", "")
-    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
-    HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")
+    ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")  # 10K chars/month free
+    HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")  # Free tier
+    # Note: Music uses YouTube Audio Library (100% free, no API needed - see docs/FREE_MUSIC_SETUP.md)
     
     # Video Settings
     MAX_TOPICS_TO_ANALYZE = 20

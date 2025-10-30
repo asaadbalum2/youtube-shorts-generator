@@ -7,7 +7,7 @@ import random
 import requests
 from typing import Optional, Dict, List
 from core.config import Config
-from core.freesound_music import FreesoundMusicAPI
+from core.youtube_audio_library import YouTubeAudioLibrary
 
 class DynamicMusicSelector:
     """Selects music dynamically based on content analysis"""
@@ -47,12 +47,11 @@ class DynamicMusicSelector:
         
         print(f"🎵 Selecting music: {music_style} style, {mood} mood, {tempo} tempo")
         
-        # First, try Freesound API (if configured)
-        freesound = FreesoundMusicAPI()
-        if freesound.token:
-            api_music = freesound.search_music(music_style, mood, duration)
-            if api_music:
-                return api_music
+        # First, try YouTube Audio Library (pre-downloaded, 100% free)
+        youtube_audio = YouTubeAudioLibrary()
+        yt_music = youtube_audio.get_music(mood, music_style, duration)
+        if yt_music:
+            return yt_music
         
         # Second, try local music files
         local_music = self._get_local_music(music_style, mood, tempo)
