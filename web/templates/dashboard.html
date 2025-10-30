@@ -332,6 +332,9 @@
             <button class="btn" onclick="testGroq()" style="margin-left: 10px; background: #28a745; color: #fff;">
                 🤖 Test Groq
             </button>
+            <button class="btn" onclick="console.log('🧪 Button clicked!'); alert('Button works!');" style="margin-left: 10px; background: #6c757d; color: #fff;">
+                🧪 Test Button
+            </button>
             <button class="btn" onclick="testReddit()" style="margin-left: 10px; background: #ff6b35; color: #fff;">
                 🔴 Test Reddit
             </button>
@@ -604,6 +607,15 @@
                 alert('❌ Error downloading video: ' + error.message);
             }
         }
+        
+        // Debug: Check if functions are loaded
+        console.log('🔧 Dashboard JavaScript loaded');
+        console.log('🔧 Available functions:', {
+            testToken: typeof testToken,
+            testGroq: typeof testGroq,
+            testReddit: typeof testReddit,
+            downloadVideo: typeof downloadVideo
+        });
         
         // Auto-refresh stats every 30 seconds
         setInterval(refreshStats, 30000);

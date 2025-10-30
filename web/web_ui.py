@@ -297,6 +297,8 @@ async def download_video(video_id: str):
         from core.database import Database
         import os
         
+        print(f"📥 Download request for video ID: {video_id}")
+        
         db = Database()
         
         # Get video info from database
@@ -311,16 +313,28 @@ async def download_video(video_id: str):
         result = cursor.fetchone()
         conn.close()
         
+        print(f"📥 Database result: {result}")
+        
         if not result:
+            print("❌ Video not found in database")
             return {"error": "Video not found"}, 404
         
         title, file_path, status = result
+        print(f"📥 Video details - Title: {title}, File: {file_path}, Status: {status}")
         
-        if not file_path or not os.path.exists(file_path):
-            return {"error": "Video file not found on disk"}, 404
+        if not file_path:
+            print("❌ No file path in database")
+            return {"error": "Video file path not found in database"}, 404
+            
+        if not os.path.exists(file_path):
+            print(f"❌ File not found on disk: {file_path}")
+            return {"error": f"Video file not found on disk: {file_path}"}, 404
         
-        if status != 'created' and status != 'processing':
-            return {"error": "Video is not available for download"}, 403
+        if status not in ['created', 'processing', 'upload_failed']:
+            print(f"❌ Video not available for download, status: {status}")
+            return {"error": f"Video is not available for download (status: {status})"}, 403
+        
+        print(f"✅ Returning file: {file_path}")
         
         # Return the file
         from fastapi.responses import FileResponse
@@ -332,6 +346,8 @@ async def download_video(video_id: str):
         
     except Exception as e:
         print(f"❌ Download error: {str(e)}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
         return {"error": f"Download failed: {str(e)}"}, 500
 
 @app.get("/api/health")
