@@ -29,15 +29,27 @@ Topic: {topic}
 
 Create a complete YouTube Short video package that maximizes views and engagement:
 
-1. Script: Write a MINIMUM 30-45 second script (target 35 seconds) that:
-   - Hooks viewers in the first 3 seconds with a shocking fact or question
-   - Is engaging, fast-paced, but NOT rushed
+1. Script: Write a MINIMUM 30-45 second script (target 35 seconds) with VIRAL characteristics:
+   
+   **HOOK (First 3 seconds - CRITICAL for retention):**
+   - Start with a SHOCKING fact, surprising statistic, or intriguing question
+   - Must grab attention immediately: "Did you know...", "This will shock you...", "The truth about..."
+   - Create immediate curiosity and pause
+   
+   **BODY (Content delivery):**
+   - Is engaging, fast-paced, but NOT rushed (match rhythm to topic energy)
    - Uses simple language (8th grade level)
    - ACTUALLY STATES each key point clearly (don't just say "there are 3 points" - list them!)
-   - For each point: State the point number, the point itself, and briefly explain it
-   - Example format: "First, [point 1]. This means [explanation]. Second, [point 2]. Here's why: [explanation]. Third, [point 3]. [Explanation]."
-   - Ends with a call to action or engaging question
-   - Has natural pauses for visuals between points
+   - For each point: State the point, explain it briefly, give context
+   - Example: "First, [point 1]. [Explanation with why it matters]. Second, [point 2]. [Explanation]. Third, [point 3]. [Explanation]."
+   - Match pacing to content - energetic topics get faster delivery, serious topics get measured pace
+   
+   **PAYOFF (Last 5 seconds - for rewatch loops):**
+   - Ends with a strong call to action, thought-provoking question, or surprising reveal
+   - Something that makes viewers want to rewatch or share
+   - Examples: "Comment what surprised you most!", "Save this if you learned something!", "Wait until you see..."
+   
+   - Ensure natural pauses for visuals between key points
 
 2. Title: Create a YouTube Shorts title (under 60 chars) that:
    - Is clickable and intriguing

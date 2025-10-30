@@ -85,10 +85,14 @@ class VideoCreator:
         
         print(f"📏 Final video duration: {duration:.1f}s")
         
-        # 3. Fetch real b-roll images/videos
-        broll_media = self._fetch_broll_media(topic, duration)
+        # 3. Split script to know how many segments we need
+        segments = self._split_script_into_segments(script)
+        num_segments = len(segments) if segments else 1
         
-        # 4. Create high-quality visual sequence
+        # 4. Fetch real b-roll images/videos (enough for all segments, no duplicates)
+        broll_media = self._fetch_broll_media(topic, duration, num_segments)
+        
+        # 5. Create high-quality visual sequence
         video_clips = self._create_high_quality_visuals(script, duration, topic, broll_media)
         
         # 5. Add background music (dynamic based on content)
@@ -129,36 +133,62 @@ class VideoCreator:
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
         return self.voice_selector.generate_speech(script, analysis, audio_path)
     
-    def _fetch_broll_media(self, topic: str, duration: float) -> List[Dict]:
+    def _fetch_broll_media(self, topic: str, duration: float, num_segments: int = 0) -> List[Dict]:
         """Fetch real b-roll images and videos from Pexels/Pixabay"""
-        print(f"🖼️ Fetching b-roll media for: {topic}")
+        print(f"🖼️ Fetching b-roll media for: {topic} (need {num_segments} unique items)")
         
         # Generate search keywords from topic
         keywords = self._extract_keywords(topic)
         
+        # Fetch MORE media than needed to ensure variety
+        target_count = max(num_segments, 8)  # Get at least 8 unique items
+        
         all_media = []
-        for keyword in keywords[:3]:  # Try top 3 keywords
+        used_urls = set()  # Track URLs to avoid duplicates
+        
+        # First, try to get multiple items per keyword
+        for keyword in keywords[:6]:  # Try more keywords
             print(f"🔍 Searching for: {keyword}")
             
-            # Try to get video first (more engaging)
-            media = self.media_fetcher.get_image(keyword, prefer_video=True)
-            if media:
-                all_media.append(media)
-                print(f"✅ Found {media['provider']} media: {keyword}")
-            else:
-                # Fallback to images
-                media = self.media_fetcher.get_image(keyword, prefer_video=False)
-                if media:
+            # Get multiple images for this keyword
+            images = self.media_fetcher.get_images(keyword, count=3)
+            for media in images:
+                if media and media.get('url') and media['url'] not in used_urls:
                     all_media.append(media)
-                    print(f"✅ Found {media['provider']} image: {keyword}")
+                    used_urls.add(media['url'])
+                    if len(all_media) >= target_count:
+                        break
+            
+            if len(all_media) >= target_count:
+                break
+            
+            # Also try video
+            media = self.media_fetcher.get_image(keyword, prefer_video=True)
+            if media and media.get('url') and media['url'] not in used_urls:
+                all_media.append(media)
+                used_urls.add(media['url'])
+            
+            if len(all_media) >= target_count:
+                break
+        
+        # If still not enough, try different search variations
+        if len(all_media) < num_segments:
+            variations = ['people', 'nature', 'technology', 'lifestyle', 'abstract', 'urban']
+            for variation in variations:
+                media = self.media_fetcher.get_image(f"{variation} {keywords[0] if keywords else 'background'}", prefer_video=False)
+                if media and media.get('url') and media['url'] not in used_urls:
+                    all_media.append(media)
+                    used_urls.add(media['url'])
+                    if len(all_media) >= target_count:
+                        break
         
         # If no media found, use fallback
         if not all_media:
             print("⚠️ No b-roll found, using fallback backgrounds")
             all_media = [self._create_fallback_media()]
         
-        print(f"📸 Total b-roll items: {len(all_media)}")
-        return all_media
+        print(f"📸 Total unique b-roll items: {len(all_media)}")
+        return all_media[:num_segments] if num_segments > 0 else all_media
     
     def _extract_keywords(self, topic: str) -> List[str]:
         """Extract search keywords from topic"""
@@ -196,8 +226,12 @@ class VideoCreator:
         for i, segment in enumerate(segments):
             print(f"📝 Processing segment {i+1}/{len(segments)}: {segment[:50]}...")
             
-            # Get b-roll for this segment
-            media = broll_media[i % len(broll_media)] if broll_media else self._create_fallback_media()
+            # Get unique b-roll for this segment (no duplicates!)
+            if i < len(broll_media):
+                media = broll_media[i]  # Use different media for each segment
+            else:
+                # If somehow we run out, use fallback
+                media = self._create_fallback_media()
             
             # Create visual for segment
             if media['provider'] == 'fallback':
@@ -291,7 +325,7 @@ class VideoCreator:
             "C:/Windows/Fonts/calibrib.ttf",
         ]
         font_path = font_paths[index % len(font_paths)]
-        font_size = self.font_sizes[index % len(self.font_sizes)]
+        font_size = 70  # Consistent, readable size (YouTube Shorts style)
         
         # Limit text to top portion of screen (not full screen)
         max_width = self.video_size[0] - 150  # More margin
@@ -304,7 +338,7 @@ class VideoCreator:
                 color='white',
                 font=font_path,
                 stroke_color='black',
-                stroke_width=2,  # Thinner stroke
+                stroke_width=4,  # Thicker outline for readability (YouTube style)
                 method='caption',
                 size=(max_width, None),
                 align='center',

@@ -73,7 +73,8 @@ class DynamicVoiceSelector:
         
         print(f"🎤 Selecting voice: {voice_style} style, {mood} mood, {energy} energy")
         
-        # Get base config
+        # Always use American accent (user preference)
+        # Get base config but override accent to American
         if voice_style in self.VOICE_CONFIGS:
             config = self.VOICE_CONFIGS[voice_style].copy()
         elif mood in ["calm", "serious"]:
@@ -82,6 +83,10 @@ class DynamicVoiceSelector:
             config = self.VOICE_CONFIGS["energetic"].copy()
         else:
             config = self.VOICE_CONFIGS["casual"].copy()
+        
+        # Force American accent (tld='com')
+        config["tld"] = "com"
+        config["accent"] = "american"
         
         # Adjust speed based on energy
         if energy == "high":
