@@ -18,7 +18,8 @@ from youtube_uploader import YouTubeUploader
 from scheduler import VideoScheduler
 from email_reporter import EmailReporter
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 # Setup logging
 logging.basicConfig(
@@ -218,17 +219,18 @@ class YouTubeShortsGenerator:
                     """Manual trigger to generate one video now (for testing)"""
                     try:
                         logger.info("Manual video generation triggered via API")
-                        result = self.generate_and_upload_video()
-                        if result:
-                            return {
-                                "status": "success",
-                                "message": "Video generated and uploaded",
-                                "video_url": result.get('url'),
-                                "video_id": result.get('video_id'),
-                                "title": result.get('title')
-                            }
-                        else:
-                            return {"status": "failed", "message": "Video generation failed - check logs"}
+                        # Run in background thread to avoid blocking
+                        import threading
+                        def generate_async():
+                            self.generate_and_upload_video()
+                        
+                        thread = threading.Thread(target=generate_async, daemon=True)
+                        thread.start()
+                        
+                        return {
+                            "status": "success",
+                            "message": "Video generation started in background - check logs for progress"
+                        }
                     except Exception as e:
                         logger.error(f"Manual generation error: {e}")
                         return {"status": "error", "message": str(e)}
@@ -241,6 +243,16 @@ class YouTubeShortsGenerator:
                         "videos_per_day": Config.VIDEOS_PER_DAY
                     }
                 
+                # Mount web UI dashboard
+                try:
+                    from web_ui import app as dashboard_app
+                    from fastapi.mount import Mount
+                    app.mount("/dashboard", dashboard_app)
+                    logger.info("Web UI dashboard mounted at /dashboard")
+                except Exception as ui_error:
+                    logger.warning(f"Could not mount web UI dashboard: {ui_error}")
+                    logger.info("Dashboard is optional - API endpoints still work")
+                
                 # Start FastAPI server in background thread
                 import threading
                 def run_server():
@@ -249,7 +261,10 @@ class YouTubeShortsGenerator:
                 
                 server_thread = threading.Thread(target=run_server, daemon=True)
                 server_thread.start()
-                logger.info("Web server started on port 8080 - use POST /generate to trigger manual video")
+                logger.info("Web server started on port 8080")
+                logger.info("  - Dashboard: http://your-repl-url.repl.co/dashboard")
+                logger.info("  - Manual trigger: POST /generate")
+                logger.info("  - Health: GET /health")
             except Exception as e:
                 logger.warning(f"Could not start web server (this is optional): {e}")
         

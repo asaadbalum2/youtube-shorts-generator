@@ -12,16 +12,42 @@ from config import Config
 
 class TopicDiscoveryAgent:
     def __init__(self):
-        self.groq_client = Groq(api_key=Config.GROQ_API_KEY) if Config.GROQ_API_KEY else None
+        # Check if Groq API key is valid (not empty)
+        if Config.GROQ_API_KEY and Config.GROQ_API_KEY.strip() and not Config.GROQ_API_KEY.startswith('your_'):
+            try:
+                self.groq_client = Groq(api_key=Config.GROQ_API_KEY)
+                print("✅ Groq client initialized")
+            except Exception as e:
+                print(f"⚠️ Groq client initialization failed: {e}")
+                self.groq_client = None
+        else:
+            print("⚠️ Groq API key not configured")
+            self.groq_client = None
         
         # Initialize Reddit if credentials provided
         self.reddit = None
-        if Config.REDDIT_CLIENT_ID and Config.REDDIT_CLIENT_SECRET:
-            self.reddit = praw.Reddit(
-                client_id=Config.REDDIT_CLIENT_ID,
-                client_secret=Config.REDDIT_CLIENT_SECRET,
-                user_agent=Config.REDDIT_USER_AGENT
-            )
+        if (Config.REDDIT_CLIENT_ID and Config.REDDIT_CLIENT_ID.strip() and 
+            Config.REDDIT_CLIENT_SECRET and Config.REDDIT_CLIENT_SECRET.strip() and
+            not Config.REDDIT_CLIENT_ID.startswith('your_')):
+            try:
+                self.reddit = praw.Reddit(
+                    client_id=Config.REDDIT_CLIENT_ID,
+                    client_secret=Config.REDDIT_CLIENT_SECRET,
+                    user_agent=Config.REDDIT_USER_AGENT
+                )
+                # Test connection (without OAuth - script apps don't need user.me())
+                # Just try to access a subreddit to verify credentials work
+                try:
+                    _ = self.reddit.subreddit('test').id  # Simple test
+                    print("✅ Reddit client initialized")
+                except Exception as test_error:
+                    print(f"⚠️ Reddit credentials might be invalid: {test_error}")
+            except Exception as e:
+                print(f"⚠️ Reddit client initialization failed: {e}")
+                self.reddit = None
+        else:
+            print("⚠️ Reddit credentials not configured")
+            self.reddit = None
     
     def discover_trending_topics(self) -> List[Dict]:
         """
@@ -116,44 +142,8 @@ class TopicDiscoveryAgent:
         """Get trending topics from YouTube"""
         topics = []
         
-        try:
-            # Try using pyyoutube library (simpler, uses API key)
-            from pyyoutube import Api
-            
-            # Note: YouTube Data API requires an API key for trending (read-only)
-            # This is separate from OAuth credentials
-            # User can get free API key from Google Cloud Console
-            youtube_api_key = Config.YOUTUBE_CLIENT_ID  # Can use API key for read operations
-            
-            if youtube_api_key:
-                api = Api(api_key=youtube_api_key)
-                trending = api.get_videos_by_chart(
-                    chart='mostPopular',
-                    region_code='US',
-                    max_results=10
-                )
-                
-                for item in trending.items:
-                    title = item.snippet.title
-                    stats = item.statistics
-                    view_count = int(stats.viewCount) if stats.viewCount else 0
-                    
-                    # Score based on view count (normalized)
-                    score = min(view_count / 100000, 10)  # 1M views = 10 points
-                    
-                    topics.append({
-                        'topic': title,
-                        'source': 'youtube_trending',
-                        'score': max(score, 7),  # Trending videos get at least 7
-                        'metadata': {
-                            'views': view_count,
-                            'video_id': item.id
-                        }
-                    })
-        except Exception as e:
-            print(f"Error fetching YouTube trends (this is optional): {e}")
-            # YouTube trending is optional - continue without it
-        
+        # Skip YouTube trending (pyyoutube not available, and not critical)
+        # We have Reddit, Google Trends, and AI generation which is enough
         return topics
     
     def _get_ai_generated_topics(self) -> List[Dict]:
