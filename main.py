@@ -449,7 +449,7 @@ class YouTubeShortsGenerator:
                 server_thread = threading.Thread(target=run_server, daemon=True)
                 server_thread.start()
                 logger.info("Web server started on port 8080")
-                logger.info("  - Dashboard: http://your-repl-url.repl.co/dashboard")
+                logger.info("  - Dashboard: https://fba4b05c-3ab8-466c-9cfc-bc8cc6378b68-00-24shrkm35btwt.pike.replit.dev/dashboard")
                 logger.info("  - Manual trigger: POST /generate")
                 logger.info("  - Health: GET /health")
             except Exception as e:

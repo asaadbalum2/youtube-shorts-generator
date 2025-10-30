@@ -361,6 +361,12 @@
                         <a href="{{ video.url }}" target="_blank">👉 Watch on YouTube</a>
                         {% else %}
                         <span style="color: #999;">Processing...</span>
+                        {% if video.video_file_path %}
+                        <br><button onclick="downloadVideo('{{ video.video_id }}', '{{ video.title }}')" 
+                                style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">
+                            📥 Download Video
+                        </button>
+                        {% endif %}
                         {% endif %}
                     </div>
                     {% endfor %}
@@ -533,6 +539,31 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🔴 Test Reddit';
+            }
+        }
+        
+        async function downloadVideo(videoId, title) {
+            try {
+                const response = await fetch(`/api/download-video/${videoId}`, {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.mp4`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    const error = await response.json();
+                    alert(`❌ Download failed: ${error.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                alert('❌ Error downloading video: ' + error.message);
             }
         }
         

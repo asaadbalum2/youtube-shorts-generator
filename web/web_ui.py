@@ -214,14 +214,18 @@ async def test_token():
 async def test_groq():
     """Test Groq API connection"""
     try:
+        print("🤖 Testing Groq API connection...")
         from core.content_generator import ContentGenerator
         
-        print("🤖 Testing Groq API connection...")
+        print("✅ ContentGenerator imported successfully")
         generator = ContentGenerator()
+        print("✅ ContentGenerator initialized")
         
         # Test with a simple prompt
         test_prompt = "Write a short sentence about cats."
+        print(f"📝 Testing with prompt: {test_prompt}")
         response = generator.generate_content(test_prompt, max_tokens=50)
+        print(f"📝 Response received: {response[:50] if response else 'None'}...")
         
         if response and len(response.strip()) > 0:
             return {
@@ -236,6 +240,9 @@ async def test_groq():
             }
             
     except Exception as e:
+        print(f"❌ Groq test error: {str(e)}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "error": f"Error testing Groq API: {str(e)}"
@@ -245,14 +252,18 @@ async def test_groq():
 async def test_reddit():
     """Test Reddit API connection"""
     try:
+        print("🔴 Testing Reddit API connection...")
         from core.topic_discovery import TopicDiscoveryAgent
         
-        print("🔴 Testing Reddit API connection...")
+        print("✅ TopicDiscoveryAgent imported successfully")
         discoverer = TopicDiscoveryAgent()
+        print("✅ TopicDiscoveryAgent initialized")
         
         # Test with a simple subreddit search
         test_subreddit = "AskReddit"
+        print(f"📝 Testing with subreddit: {test_subreddit}")
         posts = discoverer.get_trending_posts(test_subreddit, limit=3)
+        print(f"📝 Posts found: {len(posts) if posts else 0}")
         
         if posts and len(posts) > 0:
             return {
@@ -269,10 +280,57 @@ async def test_reddit():
             }
             
     except Exception as e:
+        print(f"❌ Reddit test error: {str(e)}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "error": f"Error testing Reddit API: {str(e)}"
         }
+
+@app.get("/api/download-video/{video_id}")
+async def download_video(video_id: str):
+    """Download a video file by video ID"""
+    try:
+        from core.database import Database
+        import os
+        
+        db = Database()
+        
+        # Get video info from database
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT title, video_file_path, status 
+            FROM videos 
+            WHERE video_id = ?
+        """, (video_id,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result:
+            return {"error": "Video not found"}, 404
+        
+        title, file_path, status = result
+        
+        if not file_path or not os.path.exists(file_path):
+            return {"error": "Video file not found on disk"}, 404
+        
+        if status != 'created' and status != 'processing':
+            return {"error": "Video is not available for download"}, 403
+        
+        # Return the file
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=file_path,
+            filename=f"{title.replace(' ', '_')}.mp4",
+            media_type="video/mp4"
+        )
+        
+    except Exception as e:
+        print(f"❌ Download error: {str(e)}")
+        return {"error": f"Download failed: {str(e)}"}, 500
 
 @app.get("/api/health")
 async def health():
