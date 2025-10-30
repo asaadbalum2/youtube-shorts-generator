@@ -37,11 +37,14 @@ Based on research showing viral Shorts have 70-90% higher retention with strong 
    - Create immediate curiosity with a micro-pause (0.5 seconds) after the hook
    - The first 3 seconds determine if viewers stay (data shows this is the critical retention window)
    
-   **EMOTIONAL NARRATIVE BODY (Seconds 3-25):**
+   **EMOTIONAL NARRATIVE BODY (Seconds 3-28):**
    - Tell a STORY, not just facts - emotional connection drives shares (statistically proven)
    - Create an arc: Problem → Revelation → Impact (data shows narrative arcs increase engagement)
-   - ACTUALLY STATE each key point clearly (don't say "there are 3 points" - LIST THEM!)
-   - Format: "First, [point with emotion]. Here's why this matters: [impact]. Second, [point]. This changes everything because [emotional connection]. Third, [point]. [Why this is shocking/important]."
+   - CRITICAL: NEVER say "there are 3 points" without listing them! ALWAYS explicitly state each point.
+   - Format REQUIREMENT: "Point 1: [actual point name]. [explanation]. Point 2: [actual point name]. [explanation]. Point 3: [actual point name]. [explanation]."
+   - Example GOOD: "First, the human brain processes images 60,000 times faster than text. Second, visual content gets 94% more views than text-only. Third, 90% of information transmitted to the brain is visual."
+   - Example BAD: "There are three reasons why visuals matter. First reason. Second reason. Third reason." (DON'T DO THIS!)
+   - Script MUST be 30-35 seconds when read aloud (test it mentally - it should fill the full duration)
    - Match pacing rhythmically: Energetic topics = faster, flowing rhythm | Serious topics = measured, impactful rhythm
    - Use simple language (8th grade level) but with emotional weight
    - Include micro-pauses between points (1 second) for visual transitions

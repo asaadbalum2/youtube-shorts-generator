@@ -63,24 +63,13 @@ class VideoCreator:
         audio_duration = audio_clip.duration
         print(f"🎵 Audio duration: {audio_duration:.1f}s")
         
-        # Ensure minimum duration for monetization
+        # DON'T loop audio - script should be proper length!
+        # If script is too short, the prompt needs fixing, not the audio
         if audio_duration < Config.MIN_DURATION_SECONDS:
-            print(f"⚠️ Audio too short ({audio_duration:.1f}s), extending to minimum {Config.MIN_DURATION_SECONDS}s")
-            # Extend audio by looping
-            from moviepy.audio.AudioClip import concatenate_audioclips
-            loops_needed = int(Config.MIN_DURATION_SECONDS / audio_duration) + 1
-            extended_audio = concatenate_audioclips([audio_clip] * loops_needed)
-            extended_audio = extended_audio.subclip(0, Config.MIN_DURATION_SECONDS)
-            
-            # Save extended audio
-            extended_audio_path = os.path.join(self.temp_dir, f"extended_audio_{random.randint(10000, 99999)}.mp3")
-            extended_audio.write_audiofile(extended_audio_path, verbose=False, logger=None)
-            audio_clip.close()
-            extended_audio.close()
-            
-            # Update audio path and duration
-            audio_path = extended_audio_path
-            duration = Config.MIN_DURATION_SECONDS
+            print(f"⚠️ WARNING: Audio too short ({audio_duration:.1f}s), expected minimum {Config.MIN_DURATION_SECONDS}s")
+            print(f"⚠️ Script may be too short - check content generation prompt")
+            # Use actual duration, don't loop (looping creates bad UX)
+            duration = audio_duration
         else:
             duration = min(audio_duration, Config.VIDEO_DURATION_SECONDS)
         
@@ -98,8 +87,12 @@ class VideoCreator:
         
         # 6. Add background music (dynamic based on content)
         music_path = self.music_selector.get_music_for_content(content_analysis, duration)
+        if music_path:
+            print(f"🎵 Music selected: {music_path}")
+        else:
+            print("⚠️ No music available - video will have voiceover only")
         
-        # 7. Sync music to visuals (viral characteristic: soundtrack syncs to motion)
+        #㛎 Sync music to visuals (viral characteristic: soundtrack syncs to motion)
         if music_path and video_clips:
             rhythm_sync = VideoRhythmSync()
             rhythm_sync.sync_music_to_visuals(None, video_clips)
@@ -120,9 +113,9 @@ class VideoCreator:
             temp_audiofile='temp-audio.m4a',
             remove_temp=True,
             preset='slow',  # Best quality
-            bitrate='12000k',  # Very high bitrate
-            audio_bitrate='256k',  # Very high audio quality
-            ffmpeg_params=['-crf', '18']  # High quality encoding
+            bitrate='16000k',  # HIGH bitrate for quality (restore 30MB file size)
+            audio_bitrate='320k',  # HIGH audio quality
+            ffmpeg_params=['-crf', '15', '-pix_fmt', 'yuv420p']  # Very high quality, ensure compatibility
         )
         
         # Cleanup
@@ -167,9 +160,17 @@ class VideoCreator:
         for keyword in keywords[:6]:  # Try more keywords
             print(f"🔍 Searching for: {keyword}")
             
-            # Get multiple images for this keyword
-            images = self.media_fetcher.get_images(keyword, count=3)
-            for media in images:
+            # PREFER VIDEOS OVER IMAGES - get multiple videos per keyword
+            videos = []
+            for provider in self.media_fetcher.providers:
+                try:
+                    provider_videos = provider.search_videos(keyword, per_page=5)
+                    videos.extend(provider_videos)
+                except:
+                    pass
+            
+            # Add unique videos
+            for media in videos:
                 if media and media.get('url') and media['url'] not in used_urls:
                     all_media.append(media)
                     used_urls.add(media['url'])
@@ -179,20 +180,28 @@ class VideoCreator:
             if len(all_media) >= target_count:
                 break
             
-            # Also try video
-            media = self.media_fetcher.get_image(keyword, prefer_video=True)
-            if media and media.get('url') and media['url'] not in used_urls:
-                all_media.append(media)
-                used_urls.add(media['url'])
+            # Only use images as LAST resort if no videos found
+            if len(all_media) < target_count:
+                images = self.media_fetcher.get_images(keyword, count=2)
+                for media in images:
+                    if media and media.get('url') and media['url'] not in used_urls:
+                        all_media.append(media)
+                        used_urls.add(media['url'])
+                        if len(all_media) >= target_count:
+                            break
             
             if len(all_media) >= target_count:
                 break
         
-        # If still not enough, try different search variations
+        # If still not enough, try different search variations (prefer videos)
         if len(all_media) < num_segments:
             variations = ['people', 'nature', 'technology', 'lifestyle', 'abstract', 'urban']
             for variation in variations:
-                media = self.media_fetcher.get_image(f"{variation} {keywords[0] if keywords else 'background'}", prefer_video=False)
+                # Try video first
+                media = self.media_fetcher.get_image(f"{variation} {keywords[0] if keywords else 'background'}", prefer_video=True)
+                if not media or media.get('url') in used_urls:
+                    # Fallback to image only if video not found
+                    media = self.media_fetcher.get_image(f"{variation} {keywords[0] if keywords else 'background'}", prefer_video=False)
                 if media and media.get('url') and media['url'] not in used_urls:
                     all_media.append(media)
                     used_urls.add(media['url'])
@@ -346,45 +355,51 @@ class VideoCreator:
         return bg_clip
     
     def _create_kinetic_text(self, text: str, index: int) -> TextClip:
-        """Create kinetic text with animations and effects"""
-        # Choose font - prefer bold fonts for impact
+        """Create modern YouTube Shorts style subtitles"""
+        # Modern fonts - YouTube Shorts style (clean, bold, modern)
         font_paths = [
-            "C:/Windows/Fonts/impact.ttf",
-            "C:/Windows/Fonts/arialbd.ttf",
-            "C:/Windows/Fonts/calibrib.ttf",
+            "C:/Windows/Fonts/arial.ttf",  # Clean modern
+            "C:/Windows/Fonts/arialbd.ttf",  # Bold for emphasis
+            "C:/Windows/Fonts/calibri.ttf",  # Modern sans-serif
+            "C:/Windows/Fonts/segoeui.ttf",  # Windows modern font
         ]
-        font_path = font_paths[index % len(font_paths)]
-        font_size = 70  # Consistent, readable size (YouTube Shorts style)
         
-        # Limit text to top portion of screen (not full screen)
-        max_width = self.video_size[0] - 150  # More margin
+        # Try to find a working modern font
+        font_path = None
+        for fp in font_paths:
+            if os.path.exists(fp):
+                font_path = fp
+                break
         
-        # Create text clip with high quality
+        font_size = 80  # Larger, more readable (YouTube Shorts standard)
+        max_width = self.video_size[0] - 120  # Slightly more margin for readability
+        
+        # Create text clip with modern YouTube Shorts styling
         try:
             text_clip = TextClip(
                 text,
                 fontsize=font_size,
                 color='white',
-                font=font_path,
+                font=font_path if font_path else 'Arial-Bold',  # Fallback to system font
                 stroke_color='black',
-                stroke_width=4,  # Thicker outline for readability (YouTube style)
+                stroke_width=5,  # Thicker outline for contrast (YouTube style)
                 method='caption',
                 size=(max_width, None),
                 align='center',
                 bg_color='transparent'
-            ).set_position(('center', self.video_size[1] * 0.75))  # Position at bottom (YouTube Shorts subtitle style)
+            ).set_position(('center', self.video_size[1] * 0.82))  # Slightly higher for better visibility
             
-            # Add entrance animation
-            text_clip = text_clip.set_start(0.2).fadein(0.3)
+            # Smooth entrance animation
+            text_clip = text_clip.set_start(0.1).fadein(0.4).fadeout(0.3)
         except Exception as e:
-            print(f"⚠️ Font error ({font_path}), using default: {e}")
-            # Fallback to default font
+            print(f"⚠️ Font error, using default: {e}")
+            # Fallback - simple, clean styling
             text_clip = TextClip(
                 text,
-                fontsize=70,  # Consistent size
+                fontsize=font_size,
                 color='white',
                 stroke_color='black',
-                stroke_width=4,  # Thicker outline
+                stroke_width=5,
                 method='caption',
                 size=(max_width, None),
                 align='center'

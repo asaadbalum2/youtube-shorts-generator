@@ -21,10 +21,10 @@ class DynamicVoiceSelector:
             "accent": "american"
         },
         "casual": {
-            "tld": "com.au",
+            "tld": "com",  # Force American
             "lang": "en",
             "slow": False,
-            "accent": "australian"
+            "accent": "american"
         },
         "energetic": {
             "tld": "com",
@@ -33,10 +33,10 @@ class DynamicVoiceSelector:
             "accent": "american"
         },
         "calm": {
-            "tld": "co.uk",
+            "tld": "com",  # Force American accent
             "lang": "en",
             "slow": False,
-            "accent": "british"
+            "accent": "american"
         },
         "authoritative": {
             "tld": "com",
@@ -45,16 +45,16 @@ class DynamicVoiceSelector:
             "accent": "american"
         },
         "friendly": {
-            "tld": "com.au",
+            "tld": "com",  # Force American
             "lang": "en",
             "slow": False,
-            "accent": "australian"
+            "accent": "american"
         },
         "dramatic": {
-            "tld": "co.uk",
+            "tld": "com",  # Force American
             "lang": "en",
             "slow": False,
-            "accent": "british"
+            "accent": "american"
         }
     }
     
