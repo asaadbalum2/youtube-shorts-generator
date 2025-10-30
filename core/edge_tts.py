@@ -35,51 +35,77 @@ class EdgeTTS:
             # The voice itself determines the pace and energy (energetic voices are faster, calm voices are slower)
             # For rhythm control, we'll adjust text with pauses and use appropriate voices
             
-            # Try plain text first (Edge TTS works best with simple text)
-            # Clean text to remove any problematic characters
-            text_clean = text.encode('ascii', errors='ignore').decode('ascii')
-            if not text_clean or len(text_clean) < 10:
-                text_clean = text  # Fallback to original if cleaning removed everything
+            # Edge TTS works best with clean, simple text
+            # Clean text: remove problematic characters but keep essential punctuation
+            text_clean = text
+            # Remove any null bytes or control characters
+            text_clean = text_clean.replace('\x00', '').replace('\ufffd', '')
+            # Keep only printable ASCII + common punctuation
+            text_clean = ''.join(char for char in text_clean if ord(char) < 128 or char in '，。！？')  # Allow common punctuation
             
-            # Edge TTS has issues with very long text - split if needed
-            max_text_length = 5000  # Edge TTS limit
+            if not text_clean or len(text_clean.strip()) < 10:
+                text_clean = text  # Fallback to original
+            
+            # Edge TTS has issues with very long text - use reasonable limit
+            max_text_length = 5000
             if len(text_clean) > max_text_length:
                 print(f"⚠️ Text too long ({len(text_clean)} chars), truncating to {max_text_length}...")
-                text_clean = text_clean[:max_text_length] + "..."
+                text_clean = text_clean[:max_text_length].rsplit('.', 1)[0] + '.'  # Truncate at sentence boundary
             
+            # Try Edge TTS - use stream=False for better reliability
             try:
                 communicate = edge_tts.Communicate(text_clean, voice_to_use)
-                await communicate.save(output_path)
+                
+                # Use a temporary file first to check if audio was generated
+                temp_output = output_path + '.tmp'
+                await communicate.save(temp_output)
                 
                 # Verify file was created and has content
-                if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                    print(f"✅ Edge TTS generated: {voice_to_use} (American accent guaranteed)")
+                if os.path.exists(temp_output) and os.path.getsize(temp_output) > 1000:  # At least 1KB
+                    os.rename(temp_output, output_path)
+                    print(f"✅ Edge TTS generated: {voice_to_use} (American accent, {os.path.getsize(output_path)} bytes)")
                     return True
+                elif os.path.exists(temp_output):
+                    # File too small - might be empty
+                    os.remove(temp_output)
+                    print(f"⚠️ Edge TTS: Generated file too small, trying shorter text...")
                 else:
-                    print(f"⚠️ Edge TTS: File created but empty, retrying...")
-                    # Retry once with shorter text
-                    if len(text_clean) > 2000:
-                        text_clean = text_clean[:2000] + "..."
-                    communicate = edge_tts.Communicate(text_clean, voice_to_use)
-                    await communicate.save(output_path)
-                    if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                    print(f"⚠️ Edge TTS: No file created, trying shorter text...")
+                
+                # Retry with shorter text (split by sentences)
+                if len(text_clean) > 2000:
+                    sentences = text_clean.split('. ')
+                    # Take first few sentences (up to 2000 chars)
+                    text_short = '. '.join(sentences[:max(len(sentences)//2, 3)]) + '.'
+                    print(f"⚠️ Retrying with shorter text ({len(text_short)} chars)...")
+                    communicate = edge_tts.Communicate(text_short, voice_to_use)
+                    await communicate.save(temp_output)
+                    if os.path.exists(temp_output) and os.path.getsize(temp_output) > 1000:
+                        os.rename(temp_output, output_path)
                         print(f"✅ Edge TTS generated (retry): {voice_to_use}")
                         return True
-                    return False
+                    elif os.path.exists(temp_output):
+                        os.remove(temp_output)
+                
+                return False
             except Exception as comm_error:
-                print(f"⚠️ Edge TTS communicate error: {comm_error}")
-                # Try with even shorter text
-                if len(text_clean) > 1000:
-                    print(f"⚠️ Trying with shorter text (1000 chars)...")
+                error_msg = str(comm_error)
+                print(f"⚠️ Edge TTS communicate error: {error_msg}")
+                
+                # If error mentions "No audio", try with even simpler text
+                if "No audio" in error_msg or "no audio" in error_msg.lower():
+                    print(f"⚠️ Edge TTS: 'No audio' error, trying minimal text test...")
                     try:
-                        text_short = text_clean[:1000] + "..."
-                        communicate = edge_tts.Communicate(text_short, voice_to_use)
+                        # Try with a simple test sentence first
+                        test_text = "Hello, this is a test. " + text_clean[:500] if len(text_clean) > 500 else text_clean
+                        communicate = edge_tts.Communicate(test_text, voice_to_use)
                         await communicate.save(output_path)
-                        if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                            print(f"✅ Edge TTS generated (short text): {voice_to_use}")
+                        if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
+                            print(f"✅ Edge TTS generated (minimal): {voice_to_use}")
                             return True
-                    except:
-                        pass
+                    except Exception as test_error:
+                        print(f"⚠️ Edge TTS test failed: {test_error}")
+                
                 return False
         except Exception as e:
             print(f"❌ Edge TTS error: {e}")
