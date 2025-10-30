@@ -27,7 +27,7 @@ class ContentGenerator:
 
 Topic: {topic}
 
-Based on research showing viral Shorts have 70-90% higher retention with strong hooks, and rewatch rates spike Diesel payoff moments:
+Based on research showing viral Shorts have 70-90% higher retention with strong hooks, and rewatch rates spike with payoff moments:
 
 1. Script: Write a 30-35 second script (minimum 30s for monetization, optimized for maximum retention) with DATA-BACKED VIRAL characteristics:
    
@@ -40,11 +40,13 @@ Based on research showing viral Shorts have 70-90% higher retention with strong 
    **EMOTIONAL NARRATIVE BODY (Seconds 3-28):**
    - Tell a STORY, not just facts - emotional connection drives shares (statistically proven)
    - Create an arc: Problem → Revelation → Impact (data shows narrative arcs increase engagement)
-   - CRITICAL: NEVER say "there are 3 points" without listing them! ALWAYS explicitly state each point.
-   - MANDATORY Format: "First, [FULL POINT NAME WITH DETAILS]. [Why this matters]. Second, [FULL POINT NAME WITH DETAILS]. [Why this matters]. Third, [FULL POINT NAME WITH DETAILS]. [Why this matters]."
-   - Example GOOD: "First, microplastics are found in 83% of tap water samples worldwide, meaning most people consume plastic daily. Second, these particles accumulate in human organs, potentially causing inflammation and disease. Third, the average person ingests about 5 grams of plastic per week, equivalent to eating a credit card."
-   - Example BAD: "There are three shocking facts about microplastics. First fact. Second fact. Third fact." (THIS IS WRONG - DON'T DO THIS!)
-   - Each point should be 7-10 seconds when read aloud
+   - ABSOLUTELY CRITICAL: You MUST write out the COMPLETE, FULL explanation of each point. NEVER say "first point" or "point 1" without immediately following with the actual detailed explanation.
+   - MANDATORY Format Example: "First, [STATE THE COMPLETE POINT WITH ALL DETAILS]. For example, if talking about eggs: 'First, eating eggs daily boosts brain function because they contain choline, a nutrient 90% of people are deficient in. This improves memory and cognitive processing within just 2 weeks of consistent consumption.'"
+   - ANOTHER MANDATORY Example: "Second, [FULL DETAILED POINT]. 'Second, eggs increase muscle mass significantly. Research shows people who eat eggs daily gain 30% more muscle mass during workouts because eggs provide complete protein with all essential amino acids in the perfect ratio for muscle synthesis.'"
+   - THIRD MANDATORY Example: "Third, [FULL DETAILED POINT]. 'Third, eggs improve eye health dramatically. They contain lutein and zeaxanthin, antioxidants that reduce age-related vision loss by up to 40% and protect against macular degeneration, the leading cause of blindness.'"
+   - WRONG Example (NEVER DO THIS): "There are three benefits of eating eggs. First benefit. Second benefit. Third benefit." 
+   - WRONG Example (NEVER DO THIS): "First point. Second point. Third point."
+   - Each point MUST be 7-10 seconds when read aloud, with full explanations, examples, and context
    - Script MUST be 30-35 seconds when read aloud (test it mentally - it should fill the full duration)
    - Match pacing rhythmically: Energetic topics = faster, flowing rhythm | Serious topics = measured, impactful rhythm
    - Use simple language (8th grade level) but with emotional weight

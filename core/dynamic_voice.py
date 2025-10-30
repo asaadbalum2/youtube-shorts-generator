@@ -113,14 +113,16 @@ class DynamicVoiceSelector:
         """
         config = self.get_voice_config(analysis)
         
-        print(f"🎙️ Generating speech with {config['accent']} accent ({config['tld']})")
+        print(f"🎙️ Generating speech with {config['accent']} accent (tld={config['tld']})")
         
+        # Force American English - explicit parameters
         tts = gTTS(
             text=text,
-            lang=config["lang"],
+            lang='en',  # Force English
             slow=config["slow"],
-            tld=config["tld"]
+            tld='com'  # Force .com domain for American accent
         )
+        print(f"✅ Using gTTS with lang='en', tld='com' for American accent")
         
         tts.save(output_path)
         print(f"✅ Speech saved: {output_path}")

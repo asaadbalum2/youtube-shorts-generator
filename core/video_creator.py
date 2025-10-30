@@ -271,10 +271,12 @@ class VideoCreator:
             # Get duration with rhythm variation
             current_segment_duration = segment_durations[i] if segments and i < len(segment_durations) else (duration / len(segments) if segments else duration)
             
-            # Create visual for segment
-            if media['provider'] == 'fallback':
+            # Create visual for segment - prefer b-roll, only use fallback if media has no URL
+            if not media or not media.get('url') or media.get('provider') == 'fallback':
+                print(f"⚠️ Segment {i+1}: Using fallback (no b-roll media available)")
                 clip = self._create_fallback_visual(segment, topic, i, current_segment_duration)
             else:
+                print(f"✅ Segment {i+1}: Using b-roll media from {media.get('provider', 'unknown')}")
                 clip = self._create_broll_visual(segment, media, i, current_segment_duration)
             
             clips.append(clip)
@@ -303,11 +305,26 @@ class VideoCreator:
                         base_clip = ImageClip(media_path)
                         print(f"📸 Using IMAGE b-roll: {media.get('url', 'unknown')[:50]}")
                     
-                    # Resize to fit 9:16 aspect ratio
-                    base_clip = self._resize_for_shorts(base_clip)
+                    # Resize to fit 9:16 aspect ratio (with error handling)
+                    try:
+                        base_clip = self._resize_for_shorts(base_clip)
+                    except Exception as resize_error:
+                        print(f"⚠️ Resize error: {resize_error}, trying to use original size")
+                        # If resize fails, clip will use original size
+                    
+                    # Ensure base_clip has duration
+                    if not hasattr(base_clip, 'duration') or base_clip.duration is None:
+                        base_clip = base_clip.set_duration(duration)
+                    else:
+                        # Clip to exact duration needed
+                        if base_clip.duration > duration:
+                            base_clip = base_clip.subclip(0, duration)
+                        elif base_clip.duration < duration:
+                            base_clip = base_clip.loop(duration=duration)
                     
                     # Add text overlay
                     text_clip = self._create_kinetic_text(text, index)
+                    text_clip = text_clip.set_duration(duration)
                     
                     # Create composite
                     final_clip = CompositeVideoClip([
@@ -315,9 +332,13 @@ class VideoCreator:
                         text_clip.set_duration(duration)
                     ])
                     
+                    print(f"✅ Successfully created b-roll visual with {media.get('type', 'unknown')} media")
                     return final_clip
         except Exception as e:
             print(f"⚠️ Error creating b-roll visual: {e}")
+            import traceback
+            print(f"⚠️ Full error traceback:")
+            traceback.print_exc()  # Print full error for debugging
         
         # Fallback to text-only
         return self._create_fallback_visual(text, "", index, duration)
@@ -378,8 +399,8 @@ class VideoCreator:
                 font_path = fp
                 break
         
-        font_size = 80  # Larger, more readable (YouTube Shorts standard)
-        max_width = self.video_size[0] - 120  # Slightly more margin for readability
+        font_size = 95  # Larger for YouTube Shorts (increased from 80)
+        max_width = self.video_size[0] - 80  # Less margin for larger text
         
         # Create text clip with modern YouTube Shorts styling
         try:
@@ -387,9 +408,9 @@ class VideoCreator:
                 text,
                 fontsize=font_size,
                 color='white',
-                font=font_path if font_path else 'Arial-Bold',  # Fallback to system font
+                font=font_path if font_path else 'Arial-Bold',  # Bold font for visibility
                 stroke_color='black',
-                stroke_width=5,  # Thicker outline for contrast (YouTube style)
+                stroke_width=7,  # Thicker outline (YouTube Shorts standard)
                 method='caption',
                 size=(max_width, None),
                 align='center',

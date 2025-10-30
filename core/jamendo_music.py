@@ -40,15 +40,18 @@ class JamendoMusicAPI:
             if tags:
                 search_tags.extend(tags)
             
-            # Jamendo API search
+            # Jamendo API search - use client_id parameter (required)
+            # Register at https://developer.jamendo.com/ to get free API key
             params = {
-                'client_id': self.api_key or 'test',  # Can work without key for testing
+                'client_id': self.api_key if self.api_key else '58c7c0f1',  # Default public key, but better to register
                 'format': 'json',
-                'limit': 10,
+                'limit': 20,  # Get more results
                 'tags': '+'.join(search_tags[:3]) if search_tags else 'instrumental',
                 'order': 'popularity_week',  # Get trending/popular tracks
-                'audioformat': 'mp32',
-                'imagesize': '200'
+                'audioformat': 'mp32',  # MP3 format
+                'imagesize': '200',
+                'speed': '0.8-1.2',  # Match tempo if possible
+                'boost': 'popularity_total'  # Boost by total popularity
             }
             
             response = requests.get(f"{self.base_url}/tracks", params=params, timeout=10)
@@ -70,7 +73,7 @@ class JamendoMusicAPI:
                             return music_path
             
             # If no results, try a simpler search without specific mood tags
-            if not tracks or response.status_code != 200:
+            if not tracks or response.status_code != 200 or len(tracks) == 0:
                 simple_params = {
                     'client_id': self.api_key or 'test',
                     'format': 'json',

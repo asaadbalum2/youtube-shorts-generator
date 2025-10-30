@@ -85,10 +85,11 @@ Return JSON format:
             except json.JSONDecodeError as json_error:
                 print(f"⚠️ JSON parse error: {json_error}")
                 # Try to extract JSON if wrapped in text
+                import json as json_module  # Use different name to avoid shadowing
                 json_match = re.search(r'\{.*\}', content, re.DOTALL)
                 if json_match:
                     try:
-                        analysis = json.loads(json_match.group(0))
+                        analysis = json_module.loads(json_match.group(0))
                         print(f"✅ Content analyzed (extracted): {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
                         return analysis
                     except:

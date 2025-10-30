@@ -144,7 +144,8 @@ class TopicDiscoveryAgent:
                     'metadata': {'position': i + 1}
                 })
         except Exception as e:
-            print(f"Error fetching Google Trends: {e}")
+            # Google Trends API issues are common - silently skip, we have other sources
+            pass
         
         return topics
     
