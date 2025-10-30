@@ -201,3 +201,24 @@ def auto_recover_token() -> bool:
     
     return False
 
+def update_config_token(new_token: str) -> bool:
+    """
+    Update the Config class with the new token immediately
+    This allows the app to use the new token without restart
+    """
+    try:
+        # Update the environment variable
+        os.environ['YOUTUBE_REFRESH_TOKEN'] = new_token
+        
+        # Update the Config class
+        import importlib
+        import core.config
+        importlib.reload(core.config)
+        core.config.Config.YOUTUBE_REFRESH_TOKEN = new_token
+        
+        print("✅ Token updated in memory - no restart needed!")
+        return True
+    except Exception as e:
+        print(f"⚠️ Could not update token in memory: {e}")
+        return False
+
