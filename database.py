@@ -237,4 +237,50 @@ class Database:
                 'report_sent': bool(row[4])
             }
         return None
+    
+    def mark_upload_failed(self, video_id: str, error_message: str):
+        """Mark video upload as failed and save error"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE videos 
+            SET status = 'upload_failed',
+                upload_error = ?,
+                retry_count = retry_count + 1,
+                last_retry_at = CURRENT_TIMESTAMP
+            WHERE video_id = ?
+        """, (error_message[:500], video_id))  # Limit error message length
+        
+        conn.commit()
+        conn.close无声
+    
+    def get_failed_uploads(self, max_retries: int = 3) -> List[Dict]:
+        """Get videos that failed to upload and need retry"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT video_id, title, description, topic, video_file_path, retry_count, upload_error
+            FROM videos
+            WHERE status = 'upload_failed' AND retry_count < ?
+            ORDER BY created_at ASC
+        """, (max_retries,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        videos = []
+        for row in rows:
+            videos.append({
+                'video_id': row[0],
+                'title': row[1],
+                'description': row[2],
+                'topic': row[3],
+                'video_file_path': row[4],
+                'retry_count': row[5],
+                'upload_error': row[6]
+            })
+        
+        return videos
 
