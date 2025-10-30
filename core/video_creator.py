@@ -19,6 +19,7 @@ from core.media_providers import MediaFetcher
 from core.content_analyzer import ContentAnalyzer
 from core.dynamic_music import DynamicMusicSelector
 from core.dynamic_voice import DynamicVoiceSelector
+from core.video_rhythm_sync import VideoRhythmSync
 
 class VideoCreator:
     def __init__(self):
@@ -92,16 +93,21 @@ class VideoCreator:
         # 4. Fetch real b-roll images/videos (enough for all segments, no duplicates)
         broll_media = self._fetch_broll_media(topic, duration, num_segments)
         
-        # 5. Create high-quality visual sequence
+        # 5. Create high-quality visual sequence with rhythm sync
         video_clips = self._create_high_quality_visuals(script, duration, topic, broll_media)
         
-        # 5. Add background music (dynamic based on content)
+        # 6. Add background music (dynamic based on content)
         music_path = self.music_selector.get_music_for_content(content_analysis, duration)
         
-        # 6. Combine audio, visuals, and music
+        # 7. Sync music to visuals (viral characteristic: soundtrack syncs to motion)
+        if music_path and video_clips:
+            rhythm_sync = VideoRhythmSync()
+            rhythm_sync.sync_music_to_visuals(None, video_clips)
+        
+        # 8. Combine audio, visuals, and music
         final_video = self._combine_audio_video(video_clips, audio_path, duration, music_path)
         
-        # 6. Export high-quality video
+        # 9. Export high-quality video
         video_id = f"short_{topic.replace(' ', '_')[:20]}_{random.randint(1000, 9999)}"
         output_path = os.path.join(self.output_dir, f"{video_id}.mp4")
         
@@ -230,9 +236,18 @@ class VideoCreator:
         
         clips = []
         
-        # Split script into segments
+        # Split script into segments with rhythm-aware timing
         segments = self._split_script_into_segments(script)
-        segment_duration = duration / len(segments) if segments else duration
+        
+        # Use rhythm sync for better visual timing (viral characteristic)
+        rhythm_sync = VideoRhythmSync()
+        timings = rhythm_sync.calculate_visual_timing(duration, len(segments) if segments else 1)
+        
+        # Calculate segment durations with rhythm variation
+        if segments:
+            segment_durations = [(end - start) for start, end in timings[:len(segments)]]
+        else:
+            segment_duration = duration
         
         for i, segment in enumerate(segments):
             print(f"📝 Processing segment {i+1}/{len(segments)}: {segment[:50]}...")
@@ -244,11 +259,14 @@ class VideoCreator:
                 # If somehow we run out, use fallback
                 media = self._create_fallback_media()
             
+            # Get duration with rhythm variation
+            current_segment_duration = segment_durations[i] if segments and i < len(segment_durations) else (duration / len(segments) if segments else duration)
+            
             # Create visual for segment
             if media['provider'] == 'fallback':
-                clip = self._create_fallback_visual(segment, topic, i, segment_duration)
+                clip = self._create_fallback_visual(segment, topic, i, current_segment_duration)
             else:
-                clip = self._create_broll_visual(segment, media, i, segment_duration)
+                clip = self._create_broll_visual(segment, media, i, current_segment_duration)
             
             clips.append(clip)
         

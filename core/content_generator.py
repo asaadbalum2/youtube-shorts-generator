@@ -1,6 +1,6 @@
 """
 AI Agent for generating video content (scripts, titles, descriptions)
-Optimized for YouTube Shorts engagement
+Optimized for YouTube Shorts engagement based on statistical analysis
 """
 from groq import Groq
 from typing import Dict, Optional
@@ -23,46 +23,61 @@ class ContentGenerator:
         if not self.groq_client:
             raise ValueError("Groq API key not configured")
         
-        prompt = f"""You are an expert at creating viral YouTube Shorts content.
+        prompt = f"""You are an expert at creating viral YouTube Shorts content based on statistical analysis and data-backed insights from 2024-2025 research.
 
 Topic: {topic}
 
-Create a complete YouTube Short video package that maximizes views and engagement:
+Based on research showing viral Shorts have 70-90% higher retention with strong hooks, and rewatch rates spike Diesel payoff moments:
 
-1. Script: Write a MINIMUM 30-45 second script (target 35 seconds) with VIRAL characteristics:
+1. Script: Write a 30-35 second script (minimum 30s for monetization, optimized for maximum retention) with DATA-BACKED VIRAL characteristics:
    
-   **HOOK (First 3 seconds - CRITICAL for retention):**
-   - Start with a SHOCKING fact, surprising statistic, or intriguing question
-   - Must grab attention immediately: "Did you know...", "This will shock you...", "The truth about..."
-   - Create immediate curiosity and pause
+   **HOOK (First 3 seconds - STATISTICALLY CRITICAL - 70-90% retention boost):**
+   - MUST start with a SHOCKING fact, surprising statistic, or intriguing question
+   - Examples that work: "Did you know [shocking fact]?" "This will shock you..." "The truth about [surprising thing]..."
+   - Create immediate curiosity with a micro-pause (0.5 seconds) after the hook
+   - The first 3 seconds determine if viewers stay (data shows this is the critical retention window)
    
-   **BODY (Content delivery):**
-   - Is engaging, fast-paced, but NOT rushed (match rhythm to topic energy)
-   - Uses simple language (8th grade level)
-   - ACTUALLY STATES each key point clearly (don't just say "there are 3 points" - list them!)
-   - For each point: State the point, explain it briefly, give context
-   - Example: "First, [point 1]. [Explanation with why it matters]. Second, [point 2]. [Explanation]. Third, [point 3]. [Explanation]."
-   - Match pacing to content - energetic topics get faster delivery, serious topics get measured pace
+   **EMOTIONAL NARRATIVE BODY (Seconds 3-25):**
+   - Tell a STORY, not just facts - emotional connection drives shares (statistically proven)
+   - Create an arc: Problem → Revelation → Impact (data shows narrative arcs increase engagement)
+   - ACTUALLY STATE each key point clearly (don't say "there are 3 points" - LIST THEM!)
+   - Format: "First, [point with emotion]. Here's why this matters: [impact]. Second, [point]. This changes everything because [emotional connection]. Third, [point]. [Why this is shocking/important]."
+   - Match pacing rhythmically: Energetic topics = faster, flowing rhythm | Serious topics = measured, impactful rhythm
+   - Use simple language (8th grade level) but with emotional weight
+   - Include micro-pauses between points (1 second) for visual transitions
    
-   **PAYOFF (Last 5 seconds - for rewatch loops):**
-   - Ends with a strong call to action, thought-provoking question, or surprising reveal
-   - Something that makes viewers want to rewatch or share
-   - Examples: "Comment what surprised you most!", "Save this if you learned something!", "Wait until you see..."
+   **PAYOFF MOMENT (Last 5 seconds - CRITICAL for rewatch loops):**
+   - Must end with either:
+     a) Surprising reveal that makes viewers rewatch (drives replay rate - key algorithm signal)
+     b) Thought-provoking question that drives comments (engagement signal)
+     c) Strong CTA that creates saves/shares (algorithm boost)
+   - Examples: "Wait until you see point 3 - it'll blow your mind!", "Comment what shocked you most!", "Save this if [value proposition]!"
+   - This payoff moment should make viewers want to watch again or share immediately
    
-   - Ensure natural pauses for visuals between key points
+   **RHYTHM & PACING (Data-driven requirement):**
+   - Match speech rhythm to content mood (proven to improve retention)
+   - Use strategic pauses for visual impact (0.5-1 second between major points)
+   - Vary pace to maintain engagement (faster for exciting facts, slower for impact)
+   
+   Ensure natural visual pause points for b-roll transitions between key segments.
 
 2. Title: Create a YouTube Shorts title (under 60 chars) that:
    - Is clickable and intriguing
    - Uses power words (shocking, secret, amazing, etc.)
    - Includes numbers if relevant
    - Avoids clickbait but is compelling
+   - Matches the hook from the script (consistency improves CTR)
 
 3. Description: Write a description (under 200 chars) with:
-   - First line is the hook
+   - First line is the hook (same as video opening)
    - 5 relevant hashtags (trending if possible)
    - Short, scannable format
+   - Includes engagement hook (question or CTA)
 
-4. Tags: Provide 10 relevant tags
+4. Tags: Provide 10 relevant tags that:
+   - Match the topic/authortopic keywords
+   - Include trending variations if possible
+   - Cover different search intents
 
 Format your response as JSON:
 {{
@@ -74,9 +89,9 @@ Format your response as JSON:
 
         try:
             response = self.groq_client.chat.completions.create(
-                model="llama-3.1-8b-instant",  # Updated: using current Groq model
+                model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": "You are a YouTube Shorts content expert specializing in viral videos."},
+                    {"role": "system", "content": "You are a YouTube Shorts content expert specializing in viral videos. Your scripts are backed by statistical analysis showing what makes content go viral."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.8,
@@ -114,64 +129,6 @@ Format your response as JSON:
         return {
             "script": f"Today we're talking about {topic}. This is something you probably didn't know. Let me break it down for you. First point, second point, third point. That's why this is so important. What do you think? Comment below!",
             "title": f"The Truth About {topic[:30]}",
-            "description": f"Learn about {topic}. #Shorts #Viral #Trending #Education #Facts",
-            "tags": ["shorts", "viral", "trending", "education", "facts", "interesting", "amazing", "mindblowing", "top10", "lifestyle"]
+            "description": f"Discover the shocking truth about {topic}. #shorts #facts #viral",
+            "tags": [topic.lower().split()[0], "facts", "shorts", "viral", "truth"]
         }
-    
-    def optimize_for_shorts(self, script: str) -> str:
-        """Optimize script for YouTube Shorts format"""
-        # Split into shorter sentences if needed
-        sentences = re.split(r'[.!?]+', script)
-        optimized = []
-        
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if sentence:
-                # Keep sentences under 15 words for better pacing
-                words = sentence.split()
-                if len(words) > 15:
-                    # Split long sentences
-                    mid_point = len(words) // 2
-                    optimized.append(' '.join(words[:mid_point]) + '.')
-                    optimized.append(' '.join(words[mid_point:]) + '.')
-                else:
-                    optimized.append(sentence + '.')
-        
-        return ' '.join(optimized)
-    
-    def generate_hashtags(self, topic: str, count: int = Config.HASHTAG_COUNT) -> list:
-        """Generate optimized hashtags for the topic"""
-        if not self.groq_client:
-            return ["#Shorts", "#Viral", "#Trending", "#Facts", "#Education"]
-        
-        try:
-            prompt = f"""Generate {count} trending hashtags for a YouTube Short about: {topic}
-            
-            Requirements:
-            - Include popular Shorts hashtags (#Shorts, #Viral, etc.)
-            - Add topic-specific hashtags
-            - Use currently trending tags if possible
-            - Return as JSON array: ["#hashtag1", "#hashtag2", ...]"""
-            
-            response = self.groq_client.chat.completions.create(
-                model="llama-3.1-8b-instant",  # Updated: using current Groq model
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=200
-            )
-            
-            content = response.choices[0].message.content
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
-            
-            hashtags = json.loads(content)
-            return hashtags
-        
-        except Exception as e:
-            print(f"Error generating hashtags: {e}")
-            return ["#Shorts", "#Viral", "#Trending", "#Facts", "#Education"]
-
