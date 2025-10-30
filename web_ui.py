@@ -95,7 +95,12 @@ async def dashboard(request: Request):
                 'status': video[5] if len(video) > 5 and video[5] else 'pending'
             })
         
-        return templates.TemplateResponse("dashboard.html", {
+        # Debug logging
+        import os
+        print(f"DEBUG: Rendering dashboard with {len(videos)} videos")
+        print(f"DEBUG: Template exists: {os.path.exists('templates/dashboard.html')}")
+        
+        response = templates.TemplateResponse("dashboard.html", {
             "request": request,
             "today_created": today_videos_created,
             "today_uploaded": today_uploaded,
@@ -108,6 +113,9 @@ async def dashboard(request: Request):
             "recent_videos": videos,
             "videos_per_day": Config.VIDEOS_PER_DAY
         })
+        
+        print(f"DEBUG: Template response created successfully")
+        return response
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
