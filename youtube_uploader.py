@@ -143,18 +143,43 @@ class YouTubeUploader:
                     
                     # Check for authentication errors
                     if '401' in error_str or 'Unauthorized' in error_str or 'invalid_grant' in error_str:
-                        print(f"⚠️ Authentication error detected, refreshing token (attempt {retry_count}/{max_retries})...")
-                        # Re-authenticate
-                        self._authenticate(retry=True)
-                        # Recreate the service
-                        self.service = build('youtube', 'v3', credentials=self.credentials)
-                        # Recreate the upload request
-                        insert_request = self.service.videos().insert(
-                            part=','.join(body.keys()),
-                            body=body,
-                            media_body=media
-                        )
-                        response = None  # Retry upload
+                        print(f"⚠️ Authentication error detected (attempt {retry_count}/{max_retries})...")
+                        
+                        # Check if it's a permanent token issue
+                        if 'invalid_grant' in error_str.lower():
+                            print("\n" + "="*70)
+                            print("❌ REFRESH TOKEN EXPIRED - REGENERATION REQUIRED")
+                            print("="*70)
+                            print("\nYour YouTube refresh token has expired.")
+                            print("\nTo fix:")
+                            print("1. In Replit, check if 'manual_auth.py' exists")
+                            print("2. Run: python manual_auth.py (if it exists)")
+                            print("3. Follow prompts to get new refresh token")
+                            print("4. Update YOUTUBE_REFRESH_TOKEN in Replit Secrets")
+                            print("5. Restart the app")
+                            print("\nOr manually:")
+                            print("  - Go to Google Cloud Console")
+                            print("  - Regenerate OAuth token")
+                            print("  - Update Replit Secrets")
+                            print("\nThe app will automatically retry once token is updated.")
+                            print("="*70 ahora"\n")
+                            raise Exception("Refresh token expired. See instructions above to regenerate.")
+                        
+                        # Try re-authenticating (might be a temporary issue)
+                        try:
+                            self._authenticate(retry=True)
+                            self.service = build('youtube', 'v3', credentials=self.credentials)
+                            insert_request = self.service.videos().insert(
+                                part=','.join(body.keys()),
+                                body=body,
+                                media_body=media
+                            )
+                            response = None
+                            print("✅ Re-authenticated, retrying upload...")
+                        except Exception as auth_error:
+                            if 'invalid_grant' in str(auth_error).lower() or 'expired' in str(auth_error).lower():
+                                raise Exception("Refresh token expired. Regenerate token in Replit Secrets.")
+                            raise auth_error
                     else:
                         if retry_count >= max_retries:
                             raise
