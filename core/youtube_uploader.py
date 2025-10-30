@@ -205,6 +205,21 @@ class YouTubeUploader:
         except Exception as e:
             error_str = str(e).lower()
             
+            # Check if it's a quota issue (different from token issue)
+            if 'quota' in error_str or ('403' in str(e) and 'quotaexceeded' in error_str):
+                print("\n" + "="*70)
+                print("⚠️  YOUTUBE API QUOTA WEEK")
+                print("="*70)
+                print("\nYou've used up your daily YouTube API quota (10,000 units/day by default).")
+                print("\nThis is NOT a token issue - your token is valid!")
+                print("\nSolutions:")
+                print("1. Wait until tomorrow when quota resets (PST timezone)")
+                print("2. Request quota increase in Google Cloud Console:")
+                print("   https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas")
+                print("3. The system will automatically retry after quota resets")
+                print("="*70 + "\n")
+                raise Exception(f"YouTube API quota exceeded: {e}")
+            
             # Check if it's a token expiration issue
             if any(keyword in error_str for keyword in ['401', 'unauthorized', 'invalid_grant', 'expired', 'token']):
                 print("\n" + "="*70)
