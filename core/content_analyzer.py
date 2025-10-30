@@ -75,10 +75,15 @@ Return JSON format:
             # Clean invalid control characters
             content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
             
-            analysis = json.loads(content)
-            print(f"✅ Content analyzed: {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
-            
-            return analysis
+            # Try to parse JSON, with better error handling
+            try:
+                analysis = json.loads(content)
+                print(f"✅ Content analyzed: {analysis.get('mood')} {analysis.get('music_style')} {analysis.get('voice_style')}")
+                return analysis
+            except json.JSONDecodeError as json_error:
+                print(f"⚠️ JSON parse error: {json_error}")
+                print(f"⚠️ Raw content: {content[:200]}...")
+                return self._fallback_analysis(topic, script)
             
         except Exception as e:
             print(f"⚠️ Content analysis error: {e}, using fallback")

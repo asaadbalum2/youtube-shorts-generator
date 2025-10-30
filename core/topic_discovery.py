@@ -35,7 +35,13 @@ class TopicDiscoveryAgent:
                     client_secret=Config.REDDIT_CLIENT_SECRET,
                     user_agent=Config.REDDIT_USER_AGENT
                 )
-                print("✅ Reddit client initialized")
+                # Test with a simple read-only operation
+                try:
+                    _ = list(self.reddit.subreddit('test').hot(limit=1))
+                    print("✅ Reddit client initialized and tested")
+                except Exception as test_error:
+                    print(f"⚠️ Reddit test failed: {test_error}")
+                    self.reddit = None
             except Exception as e:
                 print(f"⚠️ Reddit client initialization failed: {e}")
                 self.reddit = None
@@ -79,6 +85,7 @@ class TopicDiscoveryAgent:
         topics = []
         
         if not self.reddit:
+            print("⚠️ Reddit not available, skipping Reddit trends")
             return topics
         
         try:
@@ -86,21 +93,24 @@ class TopicDiscoveryAgent:
             subreddits = ['todayilearned', 'Showerthoughts', 'mildlyinteresting', 
                          'LifeProTips', 'AskReddit', 'funny', 'interestingasfuck']
             
-            for subreddit_name in subreddits[:3]:  # Limit for API rate limits
+            for subreddit_name in subreddits[:2]:  # Reduce to 2 to avoid rate limits
                 try:
                     subreddit = self.reddit.subreddit(subreddit_name)
-                    for post in subreddit.hot(limit=5):
-                        if post.score > 100:  # Minimum engagement threshold
+                    posts = list(subreddit.hot(limit=3))  # Reduce to 3 posts per subreddit
+                    
+                    for post in posts:
+                        if post.score > 50:  # Lower threshold to get more results
                             topics.append({
                                 'topic': post.title,
                                 'source': f'reddit/{subreddit_name}',
-                                'score': min(post.score / 100, 10),  # Normalize score
+                                'score': min(post.score / 50, 10),  # Adjust normalization
                                 'metadata': {
                                     'upvotes': post.score,
                                     'comments': post.num_comments,
                                     'url': post.url
                                 }
                             })
+                            
                 except Exception as subreddit_error:
                     print(f"⚠️ Error accessing subreddit {subreddit_name}: {subreddit_error}")
                     continue

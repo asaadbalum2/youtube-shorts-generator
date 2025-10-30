@@ -59,15 +59,31 @@ class VideoCreator:
         
         # 2. Calculate duration - ensure minimum 30 seconds
         audio_clip = AudioFileClip(audio_path)
-        duration = max(audio_clip.duration, Config.MIN_DURATION_SECONDS)
-        duration = min(duration, Config.VIDEO_DURATION_SECONDS)
+        audio_duration = audio_clip.duration
+        print(f"🎵 Audio duration: {audio_duration:.1f}s")
         
-        # If too short, we'll need to extend or regenerate
-        if duration < Config.MIN_DURATION_SECONDS:
-            print(f"⚠️ Audio too short ({duration:.1f}s), extending to minimum {Config.MIN_DURATION_SECONDS}s")
+        # Ensure minimum duration for monetization
+        if audio_duration < Config.MIN_DURATION_SECONDS:
+            print(f"⚠️ Audio too short ({audio_duration:.1f}s), extending to minimum {Config.MIN_DURATION_SECONDS}s")
+            # Extend audio by looping
+            from moviepy.audio.AudioClip import concatenate_audioclips
+            loops_needed = int(Config.MIN_DURATION_SECONDS / audio_duration) + 1
+            extended_audio = concatenate_audioclips([audio_clip] * loops_needed)
+            extended_audio = extended_audio.subclip(0, Config.MIN_DURATION_SECONDS)
+            
+            # Save extended audio
+            extended_audio_path = os.path.join(self.temp_dir, f"extended_audio_{random.randint(10000, 99999)}.mp3")
+            extended_audio.write_audiofile(extended_audio_path, verbose=False, logger=None)
+            audio_clip.close()
+            extended_audio.close()
+            
+            # Update audio path and duration
+            audio_path = extended_audio_path
             duration = Config.MIN_DURATION_SECONDS
+        else:
+            duration = min(audio_duration, Config.VIDEO_DURATION_SECONDS)
         
-        print(f"📏 Video duration: {duration:.1f}s")
+        print(f"📏 Final video duration: {duration:.1f}s")
         
         # 3. Fetch real b-roll images/videos
         broll_media = self._fetch_broll_media(topic, duration)
