@@ -187,7 +187,7 @@ class TopicDiscoveryAgent:
             
             content = response.choices[0].message.content
             
-            # Parse JSON from response
+            # Parse JSON from response - handle text-wrapped JSON arrays
             try:
                 # Extract JSON from markdown code blocks if present
                 if "```json" in content:
@@ -195,17 +195,60 @@ class TopicDiscoveryAgent:
                 elif "```" in content:
                     content = content.split("```")[1].split("```")[0].strip()
                 
-                ai_topics_data = json.loads(content)
+                # Clean invalid control characters
+                import re
+                content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', content)
+                content = ''.join(char for char in content if ord(char) >= 32 or char in '\n\r\t')
                 
-                for item in ai_topics_data:
-                    topics.append({
-                        'topic': item.get('topic', ''),
-                        'source': 'ai_generated',
-                        'score': float(item.get('score', 7)),
-                        'metadata': {'reason': item.get('reason', '')}
-                    })
-            except json.JSONDecodeError:
-                print(f"Could not parse AI response as JSON: {content}")
+                # Try direct JSON parsing first
+                try:
+                    ai_topics_data = json.loads(content)
+                except json.JSONDecodeError:
+                    # If that fails, try to extract JSON array from text
+                    # Look for JSON array pattern: [{...}]
+                    json_match = re.search(r'\[.*\]', content, re.DOTALL)
+                    if json_match:
+                        try:
+                            ai_topics_data = json.loads(json_match.group(0))
+                        except json.JSONDecodeError:
+                            # Try cleaning point by point - find individual objects
+                            # Look for all {topic: ...} objects in the text
+                            objects = re.findall(r'\{[^{}]*"topic"[^{}]*\}', content)
+                            if objects:
+                                ai_topics_data = []
+                                for obj_str in objects:
+                                    try:
+                                        obj = json.loads(obj_str)
+                                        ai_topics_data.append(obj)
+                                    except:
+                                        continue
+                            else:
+                                raise json.JSONDecodeError("No JSON array or objects found", content, 0)
+                    else:
+                        raise json.JSONDecodeError("No JSON array found", content, 0)
+                
+                # Process topics
+                if isinstance(ai_topics_data, list):
+                    for item in ai_topics_data:
+                        if isinstance(item, dict) and 'topic' in item:
+                            topics.append({
+                                'topic': item.get('topic', ''),
+                                'source': 'ai_generated',
+                                'score': float(item.get('score', 7)),
+                                'metadata': {'reason': item.get('reason', '')}
+                            })
+                
+                if topics:
+                    print(f"✅ Generated {len(topics)} AI topics")
+                else:
+                    print(f"⚠️ No valid topics extracted from AI response")
+                    
+            except json.JSONDecodeError as e:
+                print(f"Could not parse AI response as JSON: {e}")
+                print(f"⚠️ Raw content (first 500 chars): {content[:500]}")
+            except Exception as parse_error:
+                print(f"⚠️ Error parsing topics: {parse_error}")
+                print(f"⚠️ Raw content (first 500 chars): {content[:500]}")
         
         except Exception as e:
             print(f"Error generating AI topics: {e}")
