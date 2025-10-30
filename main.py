@@ -94,7 +94,8 @@ class YouTubeShortsGenerator:
                 'description': content['description'],
                 'topic': topic,
                 'trend_score': trend_score,
-                'status': 'created'
+                'status': 'created',
+                'video_file_path': video_path
             }
             self.db.add_video(video_db_data)
             
@@ -159,11 +160,41 @@ class YouTubeShortsGenerator:
                     except Exception as retry_error:
                         logger.error(f"Recovery attempt failed: {retry_error}")
                 
-                # Video was created but upload failed - update stats
+                # Video was created but upload failed - save for retry
+                error_msg = str(upload_error)
+                self.db.mark_upload_failed(video_id, error_msg)
+                
+                # Check if it's a token expiration issue - send alert
+                if 'invalid_grant' in error_msg.lower() or 'expired' in error_msg.lower():
+                    try:
+                        from email_reporter import EmailReporter
+                        emailer = EmailReporter()
+                        emailer._send_email(
+                            subject="🚨 YouTube Token Expired - Action Required",
+                            body=f"""
+                            <h2>YouTube Token Expiration Alert</h2>
+                            <p>Your YouTube refresh token has expired and needs regeneration.</p>
+                            <p><strong>Error:</strong> {error_msg[:200]}</p>
+                            <p><strong>To fix:</strong></p>
+                            <ol>
+                                <li>In Replit Shell, run: <code>python regenerate_youtube_token.py</code></li>
+                                <li>Follow the prompts to get a new refresh token</li>
+                                <li>Update YOUTUBE_REFRESH_TOKEN in Replit Secrets</li>
+                                <li>Restart the app</li>
+                                <li>Pending videos will automatically retry once token is fixed</li>
+                            </ol>
+                            <p>The system will continue creating videos but uploads will fail until token is regenerated.</p>
+                            """
+                        )
+                        logger.info("Email alert sent about token expiration")
+                    except Exception as email_error:
+                        logger.warning(f"Could not send email alert: {email_error}")
+                
+                # Update stats
                 today = date.today().isoformat()
                 self.db.update_daily_stats(today, videos_created=1)
                 
-                logger.warning("Video created but upload failed. Will retry on next scheduled run.")
+                logger.warning(f"Video created but upload failed. Saved to retry queue. Error: {error_msg[:100]}")
             
             return None
         

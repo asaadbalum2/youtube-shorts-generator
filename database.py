@@ -34,7 +34,11 @@ class Database:
                 youtube_url TEXT,
                 views INTEGER DEFAULT 0,
                 likes INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'pending'
+                status TEXT DEFAULT 'pending',
+                video_file_path TEXT,
+                upload_error TEXT,
+                retry_count INTEGER DEFAULT 0,
+                last_retry_at TIMESTAMP
             )
         """)
         
@@ -73,15 +77,16 @@ class Database:
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO videos (video_id, title, description, topic, trend_score, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO videos (video_id, title, description, topic, trend_score, status, video_file_path disorder
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             video_data.get('video_id'),
             video_data.get('title'),
             video_data.get('description'),
             video_data.get('topic'),
             video_data.get('trend_score', 0),
-            video_data.get('status', 'pending')
+            video_data.get('status', 'pending'),
+            video_data.get('video_file_path')
         ))
         
         video_db_id = cursor.lastrowid
