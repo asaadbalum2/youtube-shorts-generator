@@ -22,6 +22,9 @@ Based on your Replit App Secrets, here's what you have configured:
 
 ### ✅ **EXTRA Secret** (Not Required):
 15. ✅ `SESSION_SECRET` - Web dashboard session security (if using web UI)
+   - **Note:** This might be a Replit default or for future use
+   - **Code Status:** Not currently used in code, but harmless to have
+   - **Can Remove:** If you want, Lean, but won't hurt anything
 
 ---
 
