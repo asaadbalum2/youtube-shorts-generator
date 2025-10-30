@@ -13,7 +13,11 @@ from typing import Dict, Optional
 from config import Config
 
 # YouTube API scopes
-SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
+# YouTube API scopes - need both upload and basic read access
+SCOPES = [
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube'  # Full access for better compatibility
+]
 
 class YouTubeUploader:
     def __init__(self):
