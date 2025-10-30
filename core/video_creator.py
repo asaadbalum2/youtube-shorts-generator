@@ -292,13 +292,13 @@ class VideoCreator:
                 if media_path and os.path.exists(media_path):
                     # Create base clip from b-roll - prefer videos
                     is_video = media.get('type') == 'video' or media_path.endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv'))
-                    if is_video Clan:
+                    if is_video:
                         try:
                             base_clip = VideoFileClip(media_path)
                             print(f"✅ Using VIDEO b-roll: {media.get('url', 'unknown')[:50]}")
                         except Exception as e:
                             print(f"⚠️ Video load error, trying as image: {e}")
-                            base_clipudal = ImageClip(media_path)
+                            base_clip = ImageClip(media_path)
                     else:
                         base_clip = ImageClip(media_path)
                         print(f"📸 Using IMAGE b-roll: {media.get('url', 'unknown')[:50]}")
