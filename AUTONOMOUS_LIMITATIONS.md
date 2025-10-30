@@ -16,7 +16,7 @@
 
 ### 1. **Resilience System**
 - Videos are **saved to disk** even if upload fails
-- Failed uploads are **track needs in database**
+- Failed uploads are **tracked in database**
 - System **continues running** - doesn't crash on upload failure
 - Videos are **queued for retry** once token is fixed
 
