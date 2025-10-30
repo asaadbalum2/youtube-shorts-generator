@@ -387,13 +387,6 @@ class VideoCreator:
         
         return grouped if grouped else [script]
     
-    def _get_background_music(self, topic: str, duration: float) -> Optional[str]:
-        """Get background music that matches the topic"""
-        print("🎵 Fetching background music...")
-        # TODO: Integrate with royalty-free music API (e.g., YouTube Audio Library, Incompetech)
-        # For now, return None - videos will work without music
-        return None
-    
     def _combine_audio_video(self, video_clips: List, audio_path: str, duration: float, music_path: Optional[str] = None) -> CompositeVideoClip:
         """Combine video clips with audio and optional background music"""
         if not video_clips:
