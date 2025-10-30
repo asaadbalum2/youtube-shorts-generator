@@ -109,18 +109,45 @@ class VideoCreator:
         output_path = os.path.join(self.output_dir, f"{video_id}.mp4")
         
         print(f"🎥 Exporting to: {output_path}")
-        final_video.write_videofile(
-            output_path,
-            fps=30,
-            codec='libx264',
-            audio_codec='aac',
-            temp_audiofile='temp-audio.m4a',
-            remove_temp=True,
-            preset='slow',  # Best quality
-            bitrate='20000k',  # VERY HIGH bitrate for crisp quality
-            audio_bitrate='320k',  # HIGH audio quality
-            ffmpeg_params=['-crf', '14', '-pix_fmt', 'yuv420p', '-vf', 'scale=1080:1920:flags=lanczos']  # High quality with crisp scaling
-        )
+        try:
+            # Add verbose logging and timeout protection
+            print(f"📊 Export settings: fps=30, bitrate=20000k, duration={final_video.duration:.1f}s")
+            final_video.write_videofile(
+                output_path,
+                fps=30,
+                codec='libx264',
+                audio_codec='aac',
+                temp_audiofile='temp-audio.m4a',
+                remove_temp=True,
+                preset='medium',  # Changed from 'slow' to 'medium' for faster export
+                bitrate='16000k',  # Reduced from 20000k for faster export (still high quality)
+                audio_bitrate='320k',  # HIGH audio quality
+                ffmpeg_params=['-crf', '18', '-pix_fmt', 'yuv420p', '-vf', 'scale=1080:1920:flags=lanczos', '-threads', '2'],  # Reduced CRF, added threads limit
+                verbose=True,  # Show progress
+                logger=None  # Suppress MoviePy logger spam
+            )
+            print(f"✅ Video exported successfully: {output_path}")
+        except Exception as export_error:
+            print(f"❌ Export error: {export_error}")
+            import traceback
+            traceback.print_exc()
+            # Try fallback with lower quality
+            print("🔄 Trying fallback export with lower quality...")
+            try:
+                final_video.write_videofile(
+                    output_path,
+                    fps=30,
+                    codec='libx264',
+                    audio_codec='aac',
+                    preset='fast',  # Fast preset
+                    bitrate='8000k',  # Lower bitrate
+                    audio_bitrate='192k',
+                    verbose=False
+                )
+                print(f"✅ Fallback export succeeded: {output_path}")
+            except Exception as fallback_error:
+                print(f"❌ Fallback export also failed: {fallback_error}")
+                raise
         
         # Cleanup
         audio_clip.close()

@@ -43,12 +43,12 @@ class FontManager:
         "roboto": {
             "400": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Regular.ttf",
             "700": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Bold.ttf",
-            "900": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Black.ttf",
+            "900": "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Black.ttf",  # Falls back to Bold if not available
         },
         "inter": {
             "400": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Regular.ttf",
             "700": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Bold.ttf",
-            "900": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Black.ttf",
+            "900": "https://github.com/google/fonts/raw/main/ofl/inter/Inter-Bold.ttf",  # Inter-Black doesn't exist, use Bold
         },
     }
     
