@@ -10,7 +10,8 @@ class Config:
     # Video Generation Settings
     VIDEOS_PER_DAY = int(os.getenv("VIDEOS_PER_DAY", "3"))
     VIDEO_DURATION_SECONDS = 60  # YouTube Shorts max is 60 seconds
-    TARGET_DURATION_SECONDS = 45  # Optimal for engagement
+    TARGET_DURATION_SECONDS = 35  # Minimum 30s for monetization, target 35s
+    MIN_DURATION_SECONDS = 30  # Minimum duration for monetization eligibility
     
     # YouTube Settings
     YOUTUBE_CLIENT_ID = os.getenv("YOUTUBE_CLIENT_ID", "")

@@ -29,13 +29,15 @@ Topic: {topic}
 
 Create a complete YouTube Short video package that maximizes views and engagement:
 
-1. Script: Write a 45-60 second script that:
-   - Hooks viewers in the first 3 seconds
-   - Is engaging, fast-paced, and easy to follow
+1. Script: Write a MINIMUM 30-45 second script (target 35 seconds) that:
+   - Hooks viewers in the first 3 seconds with a shocking fact or question
+   - Is engaging, fast-paced, but NOT rushed
    - Uses simple language (8th grade level)
-   - Includes 2-3 key points or facts
+   - ACTUALLY STATES each key point clearly (don't just say "there are 3 points" - list them!)
+   - For each point: State the point number, the point itself, and briefly explain it
+   - Example format: "First, [point 1]. This means [explanation]. Second, [point 2]. Here's why: [explanation]. Third, [point 3]. [Explanation]."
    - Ends with a call to action or engaging question
-   - Has natural pauses for visuals
+   - Has natural pauses for visuals between points
 
 2. Title: Create a YouTube Shorts title (under 60 chars) that:
    - Is clickable and intriguing

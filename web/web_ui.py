@@ -457,16 +457,23 @@ async def delete_video(video_id: str):
         else:
             print(f"⚠️ File not found on disk: {file_path}")
         
+        # Ensure title is JSON-safe
+        safe_title = str(title) if title else "Unknown"
+        
         return JSONResponse({
             "status": "success",
-            "message": f"Video '{title}' deleted successfully"
+            "message": f"Video deleted successfully"
         })
         
     except Exception as e:
         print(f"❌ Delete error: {str(e)}")
         import traceback
         traceback.print_exc()
-        return JSONResponse({"error": f"Delete failed: {str(e)}"}, status_code=500)
+        error_msg = str(e)
+        return JSONResponse({
+            "status": "error",
+            "error": error_msg
+        }, status_code=500)
 
 @app.get("/api/download-video/{video_id}")
 async def download_video(video_id: str):

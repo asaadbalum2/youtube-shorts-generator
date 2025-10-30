@@ -27,13 +27,12 @@ class VideoCreator:
         
         # High-quality settings
         self.video_size = (1080, 1920)  # 9:16 for YouTube Shorts
-        self.font_sizes = [180, 160, 140, 120, 100]  # Much larger fonts
+        self.font_sizes = [60, 65, 70, 75, 80]  # Better sized fonts (not too big)
         self.font_paths = [
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/calibri.ttf", 
-            "C:/Windows/Fonts/impact.ttf",
-            "C:/Windows/Fonts/verdana.ttf",
-            "C:/Windows/Fonts/georgia.ttf"
+            "C:/Windows/Fonts/impact.ttf",  # Bold, engaging
+            "C:/Windows/Fonts/arialbd.ttf",  # Arial Bold
+            "C:/Windows/Fonts/verdana.ttf",  # Clean and readable
+            "C:/Windows/Fonts/calibrib.ttf",  # Calibri Bold
         ]
     
     def create_video(self, content: Dict, topic: str) -> str:
@@ -48,9 +47,16 @@ class VideoCreator:
         # 1. Generate high-quality audio (TTS)
         audio_path = self._generate_high_quality_audio(script)
         
-        # 2. Calculate duration
+        # 2. Calculate duration - ensure minimum 30 seconds
         audio_clip = AudioFileClip(audio_path)
-        duration = min(audio_clip.duration, Config.TARGET_DURATION_SECONDS)
+        duration = max(audio_clip.duration, Config.MIN_DURATION_SECONDS)
+        duration = min(duration, Config.VIDEO_DURATION_SECONDS)
+        
+        # If too short, we'll need to extend or regenerate
+        if duration < Config.MIN_DURATION_SECONDS:
+            print(f"⚠️ Audio too short ({duration:.1f}s), extending to minimum {Config.MIN_DURATION_SECONDS}s")
+            duration = Config.MIN_DURATION_SECONDS
+        
         print(f"📏 Video duration: {duration:.1f}s")
         
         # 3. Fetch real b-roll images/videos
@@ -59,8 +65,11 @@ class VideoCreator:
         # 4. Create high-quality visual sequence
         video_clips = self._create_high_quality_visuals(script, duration, topic, broll_media)
         
-        # 5. Combine audio and visuals
-        final_video = self._combine_audio_video(video_clips, audio_path, duration)
+        # 5. Add background music
+        music_path = self._get_background_music(topic, duration)
+        
+        # 6. Combine audio, visuals, and music
+        final_video = self._combine_audio_video(video_clips, audio_path, duration, music_path)
         
         # 6. Export high-quality video
         video_id = f"short_{topic.replace(' ', '_')[:20]}_{random.randint(1000, 9999)}"
@@ -91,12 +100,12 @@ class VideoCreator:
         """Generate high-quality TTS audio from script"""
         print("🎤 Generating high-quality TTS audio...")
         
-        # Use slower, more natural speech with better voice
+        # Use normal speed (not slow) with natural voice
         tts = gTTS(
             text=script, 
             lang='en', 
-            slow=True,  # Slower for better quality
-            tld='com.au'  # Australian accent for more natural sound
+            slow=False,  # Normal speed for better engagement
+            tld='com'  # Standard English
         )
         
         audio_path = os.path.join(self.temp_dir, f"audio_{random.randint(10000, 99999)}.mp3")
@@ -260,25 +269,49 @@ class VideoCreator:
     
     def _create_kinetic_text(self, text: str, index: int) -> TextClip:
         """Create kinetic text with animations and effects"""
-        # Choose font
-        font_path = self.font_paths[index % len(self.font_paths)]
+        # Choose font - prefer bold fonts for impact
+        font_paths = [
+            "C:/Windows/Fonts/impact.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
+            "C:/Windows/Fonts/calibrib.ttf",
+        ]
+        font_path = font_paths[index % len(font_paths)]
         font_size = self.font_sizes[index % len(self.font_sizes)]
         
-        # Create text clip with high quality
-        text_clip = TextClip(
-            text,
-            fontsize=font_size,
-            color='white',
-            font=font_path,
-            stroke_color='black',
-            stroke_width=3,
-            method='caption',
-            size=(self.video_size[0] - 100, None),
-            align='center'
-        ).set_position('center')
+        # Limit text to top portion of screen (not full screen)
+        max_width = self.video_size[0] - 150  # More margin
         
-        # Add entrance animation
-        text_clip = text_clip.set_start(0.2).fadein(0.3)
+        # Create text clip with high quality
+        try:
+            text_clip = TextClip(
+                text,
+                fontsize=font_size,
+                color='white',
+                font=font_path,
+                stroke_color='black',
+                stroke_width=2,  # Thinner stroke
+                method='caption',
+                size=(max_width, None),
+                align='center',
+                bg_color='transparent'
+            ).set_position(('center', self.video_size[1] * 0.3))  # Position in top 30% of screen
+            
+            # Add entrance animation
+            text_clip = text_clip.set_start(0.2).fadein(0.3)
+        except Exception as e:
+            print(f"⚠️ Font error ({font_path}), using default: {e}")
+            # Fallback to default font
+            text_clip = TextClip(
+                text,
+                fontsize=font_size,
+                color='white',
+                stroke_color='black',
+                stroke_width=2,
+                method='caption',
+                size=(max_width, None),
+                align='center'
+            ).set_position(('center', self.video_size[1] * 0.3))
+            text_clip = text_clip.set_start(0.2).fadein(0.3)
         
         return text_clip
     
@@ -355,8 +388,15 @@ class VideoCreator:
         
         return grouped if grouped else [script]
     
-    def _combine_audio_video(self, video_clips: List, audio_path: str, duration: float) -> CompositeVideoClip:
-        """Combine video clips with audio"""
+    def _get_background_music(self, topic: str, duration: float) -> Optional[str]:
+        """Get background music that matches the topic"""
+        print("🎵 Fetching background music...")
+        # TODO: Integrate with royalty-free music API (e.g., YouTube Audio Library, Incompetech)
+        # For now, return None - videos will work without music
+        return None
+    
+    def _combine_audio_video(self, video_clips: List, audio_path: str, duration: float, music_path: Optional[str] = None) -> CompositeVideoClip:
+        """Combine video clips with audio and optional background music"""
         if not video_clips:
             # Create a simple placeholder if no clips
             blank_clip = ColorClip(size=self.video_size, color=(0, 0, 0), duration=duration)
@@ -365,9 +405,35 @@ class VideoCreator:
         # Concatenate video clips
         final_video = concatenate_videoclips(video_clips, method="compose")
         
-        # Add audio
+        # Add voiceover audio
         audio = AudioFileClip(audio_path)
-        final_video = final_video.set_audio(audio)
+        
+        # If we have background music, mix it with voiceover
+        if music_path and os.path.exists(music_path):
+            try:
+                music = AudioFileClip(music_path)
+                # Loop music if shorter than duration
+                from moviepy.audio.AudioClip import concatenate_audioclips
+                if music.duration < duration:
+                    music = concatenate_audioclips([music] * int(duration / music.duration + 1))
+                music = music.subclip(0, duration)
+                
+                # Lower music volume (duck under voiceover)
+                music = music.volumex(0.15)  # 15% volume
+                audio = audio.volumex(1.0)  # 100% voice volume
+                
+                # Composite audio
+                from moviepy.audio.AudioClip import CompositeAudioClip
+                final_audio = CompositeAudioClip([audio, music])
+                final_video = final_video.set_audio(final_audio)
+                
+                print("✅ Background music added")
+            except Exception as e:
+                print(f"⚠️ Error adding music: {e}, using voiceover only")
+                final_video = final_video.set_audio(audio)
+        else:
+            # Just voiceover
+            final_video = final_video.set_audio(audio)
         
         # Ensure exact duration
         final_video = final_video.set_duration(min(duration, final_video.duration))
