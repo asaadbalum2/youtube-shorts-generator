@@ -23,6 +23,7 @@ class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # Free tier, fast
     HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")  # Free tier
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")  # Optional backup
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")  # Fallback for Groq
     
     # Reddit API (Free)
     REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "")

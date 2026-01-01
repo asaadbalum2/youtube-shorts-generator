@@ -6,13 +6,15 @@ import re
 from typing import Dict
 from core.config import Config
 from groq import Groq
+import requests
 
 
 class ContentAnalyzer:
     """Analyzes content to determine mood, music style, and voice characteristics"""
     
     def __init__(self):
-        self.groq_client = Groq(api_key=Config.GROQ_API_KEY)
+        self.groq_client = Groq(api_key=Config.GROQ_API_KEY) if Config.GROQ_API_KEY else None
+        self.openrouter_api_key = Config.OPENROUTER_API_KEY
     
     def analyze_content(self, topic: str, script: str) -> Dict:
         """
@@ -21,8 +23,27 @@ class ContentAnalyzer:
         Returns:
             Dictionary with mood, music_style, voice_style, energy_level, etc.
         """
+        # Try Groq first, fallback to OpenRouter if needed
         try:
-            prompt = f"""Analyze this video content and determine the appropriate styling:
+            return self._analyze_with_groq(topic, script)
+        except Exception as groq_error:
+            print(f"⚠️ Groq analysis failed: {groq_error}, trying OpenRouter fallback...")
+            if self.openrouter_api_key:
+                try:
+                    return self._analyze_with_openrouter(topic, script)
+                except Exception as openrouter_error:
+                    print(f"⚠️ OpenRouter also failed: {openrouter_error}, using fallback analysis")
+                    return self._fallback_analysis(topic, script)
+            else:
+                print("⚠️ No OpenRouter API key configured, using fallback analysis")
+                return self._fallback_analysis(topic, script)
+    
+    def _analyze_with_groq(self, topic: str, script: str) -> Dict:
+        """Analyze content using Groq API"""
+        if not self.groq_client:
+            raise ValueError("Groq API key not configured")
+        
+        prompt = f"""Analyze this video content and determine the appropriate styling:
 
 Topic: {topic}
 Script: {script[:500]}
@@ -38,7 +59,8 @@ Return ONLY a valid JSON object with this exact structure:
     "content_theme": "theme_name",
     "keywords": ["keyword1", "keyword2", "keyword3"]
 }}"""
-            
+        
+        try:
             response = self.groq_client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
@@ -50,13 +72,69 @@ Return ONLY a valid JSON object with this exact structure:
             )
             
             content = response.choices[0].message.content
+            return self._parse_analysis_response(content, topic, script)
+        except Exception as e:
+            raise Exception(f"Groq API error: {e}")
+    
+    def _analyze_with_openrouter(self, topic: str, script: str) -> Dict:
+        """Analyze content using OpenRouter API as fallback"""
+        if not self.openrouter_api_key:
+            raise ValueError("OpenRouter API key not configured")
+        
+        prompt = f"""Analyze this video content and determine the appropriate styling:
+
+Topic: {topic}
+Script: {script[:500]}
+
+Return ONLY a valid JSON object with this exact structure:
+{{
+    "mood": "mood_name",
+    "genre": "genre_name",
+    "energy_level": "low/medium/high",
+    "voice_style": "voice_style_name",
+    "music_style": "music_style_name",
+    "music_tempo": "slow/medium/fast",
+    "content_theme": "theme_name",
+    "keywords": ["keyword1", "keyword2", "keyword3"]
+}}"""
+        
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.openrouter_api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://github.com/ViralShortsFactory",
+                    "X-Title": "ViralShortsFactory"
+                },
+                json={
+                    "model": "meta-llama/llama-3.1-8b-instruct:free",
+                    "messages": [
+                        {"role": "system", "content": "You are an expert at analyzing video content to determine appropriate audio and visual styling. ALWAYS return ONLY valid JSON, no other text."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 500
+                },
+                timeout=30
+            )
             
-            # Check if content is empty
-            if not content or not content.strip():
-                print("⚠️ Content analysis: Empty response from AI, using fallback")
-                return self._fallback_analysis(topic, script)
+            if response.status_code != 200:
+                raise Exception(f"OpenRouter API returned status {response.status_code}: {response.text}")
             
-            # STEP 1: Extract JSON from markdown code blocks if present
+            result = response.json()
+            content = result['choices'][0]['message']['content']
+            return self._parse_analysis_response(content, topic, script)
+        except Exception as e:
+            raise Exception(f"OpenRouter API error: {e}")
+    
+    def _parse_analysis_response(self, content: str, topic: str, script: str) -> Dict:
+        # Check if content is empty
+        if not content or not content.strip():
+            print("⚠️ Content analysis: Empty response from AI, using fallback")
+            return self._fallback_analysis(topic, script)
+        
+        # STEP 1: Extract JSON from markdown code blocks if present
             json_content = None
             
             if "```json" in content:
@@ -135,12 +213,6 @@ Return ONLY a valid JSON object with this exact structure:
                 except:
                     pass
                 return self._fallback_analysis(topic, script)
-            
-        except Exception as e:
-            print(f"⚠️ Content analysis error: {e}, using fallback")
-            import traceback
-            traceback.print_exc()
-            return self._fallback_analysis(topic, script)
     
     def _fallback_analysis(self, topic: str, script: str) -> Dict:
         """Fallback analysis based on keywords"""

@@ -191,6 +191,19 @@ class YouTubeShortsGenerator:
             content = self.content_generator.generate_video_content(topic)
             logger.info(f"Generated title: {content['title']}")
             
+            # Step 2.5: Get post-content enhancements
+            enhancements = self.content_generator.get_post_content_enhancements(content, topic)
+            total_issues = sum(len(v) for k, v in enhancements.items() if k != "overall_suggestions")
+            if total_issues > 0:
+                logger.info(f"📊 Content analysis: {total_issues} enhancement suggestions found")
+                # Log key suggestions
+                if enhancements.get("script_enhancements"):
+                    logger.info(f"   Script: {enhancements['script_enhancements'][0]}")
+                if enhancements.get("title_enhancements"):
+                    logger.info(f"   Title: {enhancements['title_enhancements'][0]}")
+            else:
+                logger.info("✅ Content quality check passed - all enhancements OK")
+            
             # Step 3: Create video
             logger.info("Step 3: Creating video file...")
             video_path = self.video_creator.create_video(content, topic)
